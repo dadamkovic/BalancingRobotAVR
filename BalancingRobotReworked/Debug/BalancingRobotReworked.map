@@ -12,6 +12,28 @@ Discarded input sections
  .text          0x0000000000000000        0x0 ./main.o
  .data          0x0000000000000000        0x0 ./main.o
  .bss           0x0000000000000000        0x0 ./main.o
+ .text          0x0000000000000000        0x0 ./mpu6050_IIC.o
+ .data          0x0000000000000000        0x0 ./mpu6050_IIC.o
+ .bss           0x0000000000000000        0x0 ./mpu6050_IIC.o
+ .stab          0x0000000000000000      0x6d8 ./mpu6050_IIC.o
+                                        0x6e4 (size before relaxing)
+ .text._Z7initIICv
+                0x0000000000000000       0x12 ./mpu6050_IIC.o
+ .text._Z18IICwaitForCompletev
+                0x0000000000000000        0xa ./mpu6050_IIC.o
+ .text._Z12IICsendStartv
+                0x0000000000000000        0xa ./mpu6050_IIC.o
+ .text._Z11IICsendStopv
+                0x0000000000000000        0xa ./mpu6050_IIC.o
+ .text._Z11IICsendDatah
+                0x0000000000000000        0xe ./mpu6050_IIC.o
+ .text._Z10IICreadAckv
+                0x0000000000000000       0x10 ./mpu6050_IIC.o
+ .text._Z11IICreadNackv
+                0x0000000000000000       0x10 ./mpu6050_IIC.o
+ .text._Z10IICreadMPUPj
+                0x0000000000000000       0x7a ./mpu6050_IIC.o
+ .comment       0x0000000000000000       0x12 ./mpu6050_IIC.o
  .text          0x0000000000000000        0x0 ./uart.o
  .data          0x0000000000000000        0x0 ./uart.o
  .bss           0x0000000000000000        0x0 ./uart.o
@@ -75,6 +97,7 @@ Linker script and memory map
 Address of section .data set to 0x800100
 LOAD /usr/lib/gcc/avr/5.4.0/../../../avr/lib/avr5/crtatmega328p.o
 LOAD ./main.o
+LOAD ./mpu6050_IIC.o
 LOAD ./uart.o
 LOAD /usr/lib/gcc/avr/5.4.0/avr5/libgcc.a
 LOAD /usr/lib/gcc/avr/5.4.0/../../../avr/lib/avr5/libm.a
@@ -362,9 +385,9 @@ END GROUP
  .stab          0x0000000000000510      0x5d0 ./uart.o
                                         0x798 (size before relaxing)
 
-.stabstr        0x0000000000000000      0xe38
+.stabstr        0x0000000000000000      0xf32
  *(.stabstr)
- .stabstr       0x0000000000000000      0xe38 ./main.o
+ .stabstr       0x0000000000000000      0xf32 ./main.o
 
 .stab.excl
  *(.stab.excl)
@@ -461,10 +484,18 @@ LOAD linker stubs
 Cross Reference Table
 
 Symbol                                            File
+_Z10IICreadAckv                                   ./mpu6050_IIC.o
+_Z10IICreadMPUPj                                  ./mpu6050_IIC.o
 _Z10sendStringPKc                                 ./uart.o
+_Z11IICreadNackv                                  ./mpu6050_IIC.o
+_Z11IICsendDatah                                  ./mpu6050_IIC.o
+_Z11IICsendStopv                                  ./mpu6050_IIC.o
 _Z11receiveCharv                                  ./uart.o
+_Z12IICsendStartv                                 ./mpu6050_IIC.o
 _Z13receiveStringPc                               ./uart.o
 _Z15avaliableSerialv                              ./uart.o
+_Z18IICwaitForCompletev                           ./mpu6050_IIC.o
+_Z7initIICv                                       ./mpu6050_IIC.o
 _Z8initUARTv                                      ./uart.o
                                                   ./main.o
 _Z8sendCharh                                      ./uart.o

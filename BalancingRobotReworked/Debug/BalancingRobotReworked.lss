@@ -11,19 +11,19 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   3 .stab         00000ae0  00000000  00000000  000001b0  2**2
                   CONTENTS, READONLY, DEBUGGING
-  4 .stabstr      00000e38  00000000  00000000  00000c90  2**0
+  4 .stabstr      00000f32  00000000  00000000  00000c90  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .comment      00000011  00000000  00000000  00001ac8  2**0
+  5 .comment      00000011  00000000  00000000  00001bc2  2**0
                   CONTENTS, READONLY
-  6 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00001adc  2**2
+  6 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00001bd4  2**2
                   CONTENTS, READONLY
-  7 .debug_info   000005f4  00000000  00000000  00001b1c  2**0
+  7 .debug_info   000005f4  00000000  00000000  00001c14  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_abbrev 000005a2  00000000  00000000  00002110  2**0
+  8 .debug_abbrev 000005a2  00000000  00000000  00002208  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_line   0000001a  00000000  00000000  000026b2  2**0
+  9 .debug_line   0000001a  00000000  00000000  000027aa  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000208  00000000  00000000  000026cc  2**0
+ 10 .debug_str    00000208  00000000  00000000  000027c4  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -123,22 +123,24 @@ int main(void){
   92:	08 95       	ret
 
 00000094 <_Z8initUARTv>:
-
 /*
  * initUART : sets baudrate, no parity,8-bit data, 1 stop-bit, asynchronous mode and enables RX, TX pins
+ * TODO : Check taht USE_2X thing
 */
 void initUART(){
     UBRR0H = UBRRH_VALUE;
   94:	10 92 c5 00 	sts	0x00C5, r1	; 0x8000c5 <__TEXT_REGION_LENGTH__+0x7e00c5>
     UBRR0L = UBRRL_VALUE;
-  98:	8c e0       	ldi	r24, 0x0C	; 12
+  98:	83 e3       	ldi	r24, 0x33	; 51
   9a:	80 93 c4 00 	sts	0x00C4, r24	; 0x8000c4 <__TEXT_REGION_LENGTH__+0x7e00c4>
     #if USE_2X
     UCSR0A |= (1 << U2X0);
+    #else
+    UCSR0A &= ~(1 << U2X0);
   9e:	e0 ec       	ldi	r30, 0xC0	; 192
   a0:	f0 e0       	ldi	r31, 0x00	; 0
   a2:	80 81       	ld	r24, Z
-  a4:	82 60       	ori	r24, 0x02	; 2
+  a4:	8d 7f       	andi	r24, 0xFD	; 253
   a6:	80 83       	st	Z, r24
     #endif
     //UBRRH = 0;              //setup for 9600 baudrate UBRRH_VALUE always wanted to use 2x mode
@@ -182,10 +184,10 @@ void initUART(){
   da:	08 95       	ret
 
 000000dc <__vector_18>:
-        sendChar(string2send[i]);
-        i++;
-    }
-}
+
+/*
+ * TODO : Check whether it won't be necessary to clear some flags after the interrupt
+ */
 
 ISR(USART_RX_vect){
   dc:	1f 92       	push	r1
@@ -216,7 +218,7 @@ ISR(USART_RX_vect){
  102:	81 e0       	ldi	r24, 0x01	; 1
  104:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <_edata>
  108:	0d c0       	rjmp	.+26     	; 0x124 <__vector_18+0x48>
-}
+ */
 
 ISR(USART_RX_vect){
     char receivedByte = UDR0;
