@@ -65,7 +65,7 @@
                                 							
                             </tool>
                             							
-                            <tool id="de.innot.avreclipse.tool.cppcompiler.app.debug.1195416664" name="AVR C++ Compiler" superClass="de.innot.avreclipse.tool.cppcompiler.app.debug">
+                            <tool command="avr-g++ -std=c++11" id="de.innot.avreclipse.tool.cppcompiler.app.debug.1195416664" name="AVR C++ Compiler" superClass="de.innot.avreclipse.tool.cppcompiler.app.debug">
                                 								
                                 <option id="de.innot.avreclipse.cppcompiler.option.debug.level.667423347" name="Generate Debugging Info" superClass="de.innot.avreclipse.cppcompiler.option.debug.level" useByScannerDiscovery="false"/>
                                 								

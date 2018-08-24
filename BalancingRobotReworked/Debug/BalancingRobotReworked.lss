@@ -3,27 +3,27 @@ BalancingRobotReworked.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000000  00800100  00800100  000001ae  2**0
+  0 .data         00000000  00800100  00800100  00000302  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  1 .text         0000013a  00000000  00000000  00000074  2**1
+  1 .text         0000028e  00000000  00000000  00000074  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .bss          00000005  00800100  00800100  000001ae  2**0
+  2 .bss          00000007  00800100  00800100  00000302  2**0
                   ALLOC
-  3 .stab         00000ae0  00000000  00000000  000001b0  2**2
+  3 .stab         000017a0  00000000  00000000  00000304  2**2
                   CONTENTS, READONLY, DEBUGGING
-  4 .stabstr      00000f32  00000000  00000000  00000c90  2**0
+  4 .stabstr      0000192f  00000000  00000000  00001aa4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .comment      00000011  00000000  00000000  00001bc2  2**0
+  5 .comment      00000011  00000000  00000000  000033d3  2**0
                   CONTENTS, READONLY
-  6 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00001bd4  2**2
+  6 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  000033e4  2**2
                   CONTENTS, READONLY
-  7 .debug_info   000005f4  00000000  00000000  00001c14  2**0
+  7 .debug_info   000005f4  00000000  00000000  00003424  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_abbrev 000005a2  00000000  00000000  00002208  2**0
+  8 .debug_abbrev 000005a2  00000000  00000000  00003a18  2**0
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_line   0000001a  00000000  00000000  000027aa  2**0
+  9 .debug_line   0000001a  00000000  00000000  00003fba  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_str    00000208  00000000  00000000  000027c4  2**0
+ 10 .debug_str    00000208  00000000  00000000  00003fd4  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -31,9 +31,9 @@ Disassembly of section .text:
 00000000 <__vectors>:
    0:	33 c0       	rjmp	.+102    	; 0x68 <__ctors_end>
    2:	00 00       	nop
-   4:	41 c0       	rjmp	.+130    	; 0x88 <__bad_interrupt>
+   4:	c6 c0       	rjmp	.+396    	; 0x192 <__vector_1>
    6:	00 00       	nop
-   8:	3f c0       	rjmp	.+126    	; 0x88 <__bad_interrupt>
+   8:	d5 c0       	rjmp	.+426    	; 0x1b4 <__vector_2>
    a:	00 00       	nop
    c:	3d c0       	rjmp	.+122    	; 0x88 <__bad_interrupt>
    e:	00 00       	nop
@@ -65,7 +65,7 @@ Disassembly of section .text:
   42:	00 00       	nop
   44:	21 c0       	rjmp	.+66     	; 0x88 <__bad_interrupt>
   46:	00 00       	nop
-  48:	49 c0       	rjmp	.+146    	; 0xdc <__vector_18>
+  48:	f3 c0       	rjmp	.+486    	; 0x230 <__vector_18>
   4a:	00 00       	nop
   4c:	1d c0       	rjmp	.+58     	; 0x88 <__bad_interrupt>
   4e:	00 00       	nop
@@ -100,11 +100,11 @@ Disassembly of section .text:
   7c:	1d 92       	st	X+, r1
 
 0000007e <.do_clear_bss_start>:
-  7e:	a5 30       	cpi	r26, 0x05	; 5
+  7e:	a7 30       	cpi	r26, 0x07	; 7
   80:	b2 07       	cpc	r27, r18
   82:	e1 f7       	brne	.-8      	; 0x7c <.do_clear_bss_loop>
   84:	02 d0       	rcall	.+4      	; 0x8a <main>
-  86:	57 c0       	rjmp	.+174    	; 0x136 <_exit>
+  86:	01 c1       	rjmp	.+514    	; 0x28a <_exit>
 
 00000088 <__bad_interrupt>:
   88:	bb cf       	rjmp	.-138    	; 0x0 <__vectors>
@@ -116,143 +116,446 @@ volatile uint8_t tracking=0;
 volatile uint8_t directionReceived=0;
 
 int main(void){
-  8a:	04 d0       	rcall	.+8      	; 0x94 <_Z8initUARTv>
-  8c:	78 94       	sei
-  8e:	80 e0       	ldi	r24, 0x00	; 0
-  90:	90 e0       	ldi	r25, 0x00	; 0
-  92:	08 95       	ret
+  8a:	cf 93       	push	r28
+  8c:	df 93       	push	r29
+  8e:	cd b7       	in	r28, 0x3d	; 61
+  90:	de b7       	in	r29, 0x3e	; 62
+  92:	6a 97       	sbiw	r28, 0x1a	; 26
+  94:	0f b6       	in	r0, 0x3f	; 63
+  96:	f8 94       	cli
+  98:	de bf       	out	0x3e, r29	; 62
+  9a:	0f be       	out	0x3f, r0	; 63
+    initUART();                                     //set baudrate (BAUD) in uart.h if change is needed
+  9c:	cd bf       	out	0x3d, r28	; 61
+    initIIC();                                      //initializes TWI interface
+  9e:	a4 d0       	rcall	.+328    	; 0x1e8 <_Z8initUARTv>
+  a0:	9a d0       	rcall	.+308    	; 0x1d6 <_Z7initIICv>
+        volatile uint8_t encoder0 = 0;
+        volatile uint8_t encoder1 = 0;
+        //MotorDrive();
+        MotorDrive(volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2)
+        : _Motor_A_PORT(a_port), _Motor_B_PORT(b_port), _Motor_A_PIN_1(a_pin_1), _Motor_A_PIN_2(a_pin_2),
+        _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {
+  a2:	19 86       	std	Y+9, r1	; 0x09
+  a4:	1a 86       	std	Y+10, r1	; 0x0a
+  a6:	1b 86       	std	Y+11, r1	; 0x0b
+  a8:	1c 86       	std	Y+12, r1	; 0x0c
+  aa:	1d 86       	std	Y+13, r1	; 0x0d
+  ac:	1e 86       	std	Y+14, r1	; 0x0e
+  ae:	1f 86       	std	Y+15, r1	; 0x0f
+  b0:	18 8a       	std	Y+16, r1	; 0x10
+  b2:	19 8a       	std	Y+17, r1	; 0x11
+  b4:	1a 8a       	std	Y+18, r1	; 0x12
+  b6:	85 e2       	ldi	r24, 0x25	; 37
+  b8:	90 e0       	ldi	r25, 0x00	; 0
+  ba:	9c 8b       	std	Y+20, r25	; 0x14
+  bc:	8b 8b       	std	Y+19, r24	; 0x13
+  be:	9e 8b       	std	Y+22, r25	; 0x16
+  c0:	8d 8b       	std	Y+21, r24	; 0x15
+  c2:	1f 8a       	std	Y+23, r1	; 0x17
+  c4:	81 e0       	ldi	r24, 0x01	; 1
+  c6:	88 8f       	std	Y+24, r24	; 0x18
+  c8:	82 e0       	ldi	r24, 0x02	; 2
+  ca:	89 8f       	std	Y+25, r24	; 0x19
+  cc:	83 e0       	ldi	r24, 0x03	; 3
 
-00000094 <_Z8initUARTv>:
+class MotorDrive {
+    public:
+        float Motor_SPEED[2];
+        float Motor_A_SPEED = 0;
+        float Motor_B_SPEED = 0;
+  ce:	8a 8f       	std	Y+26, r24	; 0x1a
+  d0:	ce 01       	movw	r24, r28
+  d2:	01 96       	adiw	r24, 0x01	; 1
+  d4:	32 d0       	rcall	.+100    	; 0x13a <_ZN10MotorDrive10initMotorsEv>
+        volatile uint8_t encoder0 = 0;
+        volatile uint8_t encoder1 = 0;
+  d6:	78 94       	sei
+        _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {
+
+        /*
+         * INIT :   PORT for motor A , IN1, IN2, PORT for motor B, IN3, IN4
+         */
+
+  d8:	80 e0       	ldi	r24, 0x00	; 0
+  da:	90 e0       	ldi	r25, 0x00	; 0
+  dc:	6a 96       	adiw	r28, 0x1a	; 26
+  de:	0f b6       	in	r0, 0x3f	; 63
+  e0:	f8 94       	cli
+  e2:	de bf       	out	0x3e, r29	; 62
+  e4:	0f be       	out	0x3f, r0	; 63
+  e6:	cd bf       	out	0x3d, r28	; 61
+  e8:	df 91       	pop	r29
+  ea:	cf 91       	pop	r28
+  ec:	08 95       	ret
+
+000000ee <_ZN10MotorDrive6SetDIREhc>:
+/*
+*INPUT : direction of motor (<0 BACK, >0 FORWARD), char (A, B) selects which motor to control
+*FUNCTION : sets PINS based on the desired direction of spin
+*OUTPUT : 0
+*/
+uint8_t MotorDrive::SetDIR(uint8_t dir, char motor){
+  ee:	fc 01       	movw	r30, r24
+    volatile uint8_t *motor_port;
+    int ctrlx1 = 0;
+    int ctrlx0 = 0;
+    switch(motor){
+  f0:	41 34       	cpi	r20, 0x41	; 65
+  f2:	39 f0       	breq	.+14     	; 0x102 <_ZN10MotorDrive6SetDIREhc+0x14>
+  f4:	42 34       	cpi	r20, 0x42	; 66
+  f6:	f9 f4       	brne	.+62     	; 0x136 <_ZN10MotorDrive6SetDIREhc+0x48>
+                motor_port = _Motor_A_PORT;
+                ctrlx0 = _Motor_A_PIN_1;
+                ctrlx1 = _Motor_A_PIN_2;
+                break;
+        case 'B':
+                motor_port = _Motor_B_PORT;
+  f8:	a4 89       	ldd	r26, Z+20	; 0x14
+  fa:	b5 89       	ldd	r27, Z+21	; 0x15
+                ctrlx0 = _Motor_B_PIN_1;
+  fc:	40 8d       	ldd	r20, Z+24	; 0x18
+                ctrlx1 = _Motor_B_PIN_2;
+  fe:	21 8d       	ldd	r18, Z+25	; 0x19
+ 100:	04 c0       	rjmp	.+8      	; 0x10a <_ZN10MotorDrive6SetDIREhc+0x1c>
+    volatile uint8_t *motor_port;
+    int ctrlx1 = 0;
+    int ctrlx0 = 0;
+    switch(motor){
+        case 'A':
+                motor_port = _Motor_A_PORT;
+ 102:	a2 89       	ldd	r26, Z+18	; 0x12
+ 104:	b3 89       	ldd	r27, Z+19	; 0x13
+                ctrlx0 = _Motor_A_PIN_1;
+ 106:	46 89       	ldd	r20, Z+22	; 0x16
+                ctrlx1 = _Motor_A_PIN_2;
+ 108:	27 89       	ldd	r18, Z+23	; 0x17
+    if(dir<0){
+        *motor_port &= ~(1 << ctrlx0);
+        *motor_port |= (1 << ctrlx1);
+    }
+    else{
+        *motor_port |= (1 << ctrlx0);
+ 10a:	3c 91       	ld	r19, X
+ 10c:	81 e0       	ldi	r24, 0x01	; 1
+ 10e:	90 e0       	ldi	r25, 0x00	; 0
+ 110:	bc 01       	movw	r22, r24
+ 112:	02 c0       	rjmp	.+4      	; 0x118 <_ZN10MotorDrive6SetDIREhc+0x2a>
+ 114:	66 0f       	add	r22, r22
+ 116:	77 1f       	adc	r23, r23
+ 118:	4a 95       	dec	r20
+ 11a:	e2 f7       	brpl	.-8      	; 0x114 <_ZN10MotorDrive6SetDIREhc+0x26>
+ 11c:	ab 01       	movw	r20, r22
+ 11e:	43 2b       	or	r20, r19
+ 120:	4c 93       	st	X, r20
+        *motor_port &= ~(1<< ctrlx1);
+ 122:	3c 91       	ld	r19, X
+ 124:	01 c0       	rjmp	.+2      	; 0x128 <_ZN10MotorDrive6SetDIREhc+0x3a>
+ 126:	88 0f       	add	r24, r24
+ 128:	2a 95       	dec	r18
+ 12a:	ea f7       	brpl	.-6      	; 0x126 <_ZN10MotorDrive6SetDIREhc+0x38>
+ 12c:	80 95       	com	r24
+ 12e:	83 23       	and	r24, r19
+ 130:	8c 93       	st	X, r24
+    }
+
+   return 0;
+ 132:	80 e0       	ldi	r24, 0x00	; 0
+ 134:	08 95       	ret
+                motor_port = _Motor_B_PORT;
+                ctrlx0 = _Motor_B_PIN_1;
+                ctrlx1 = _Motor_B_PIN_2;
+                break;
+        default:
+                return 1;
+ 136:	81 e0       	ldi	r24, 0x01	; 1
+        *motor_port |= (1 << ctrlx0);
+        *motor_port &= ~(1<< ctrlx1);
+    }
+
+   return 0;
+}
+ 138:	08 95       	ret
+
+0000013a <_ZN10MotorDrive10initMotorsEv>:
+/*
+*INPUT : void
+*FUNCTION : initializes timer0A for fast PWM on pins PD5, PD6 (5,6 on Arduino)
+*OUTPUT : 0
+*/
+uint8_t MotorDrive::initMotors(){
+ 13a:	cf 93       	push	r28
+ 13c:	df 93       	push	r29
+ 13e:	ec 01       	movw	r28, r24
+
+    DDRD |= (1 << DDD6) | (1 << DDD5) ;         // PD6, PD5 is now an output
+ 140:	8a b1       	in	r24, 0x0a	; 10
+ 142:	80 66       	ori	r24, 0x60	; 96
+ 144:	8a b9       	out	0x0a, r24	; 10
+    OCR0A = 0;                                  //motors initialized to 0V - shutdown
+ 146:	17 bc       	out	0x27, r1	; 39
+    OCR0B = 0;
+ 148:	18 bc       	out	0x28, r1	; 40
+
+    TCCR0A |= (1 << COM0A1) | (1 << COM0B1);
+ 14a:	84 b5       	in	r24, 0x24	; 36
+ 14c:	80 6a       	ori	r24, 0xA0	; 160
+ 14e:	84 bd       	out	0x24, r24	; 36
+    // set none-inverting mode
+
+    TCCR0A |= (1 << WGM01) | (1 << WGM00);
+ 150:	84 b5       	in	r24, 0x24	; 36
+ 152:	83 60       	ori	r24, 0x03	; 3
+ 154:	84 bd       	out	0x24, r24	; 36
+    // set fast PWM Mode
+
+    TCCR0B |=  (1 << CS00)  ;                   //prescaler frequency aproximately 100Hz
+ 156:	85 b5       	in	r24, 0x25	; 37
+ 158:	81 60       	ori	r24, 0x01	; 1
+ 15a:	85 bd       	out	0x25, r24	; 37
+    //TCCR0B |=  (1 << CS02)  ;
+    SetDIR(1,'A');                              //both motors forward
+ 15c:	41 e4       	ldi	r20, 0x41	; 65
+ 15e:	61 e0       	ldi	r22, 0x01	; 1
+ 160:	ce 01       	movw	r24, r28
+ 162:	c5 df       	rcall	.-118    	; 0xee <_ZN10MotorDrive6SetDIREhc>
+    SetDIR(1,'B');
+ 164:	42 e4       	ldi	r20, 0x42	; 66
+ 166:	61 e0       	ldi	r22, 0x01	; 1
+ 168:	ce 01       	movw	r24, r28
+ 16a:	c1 df       	rcall	.-126    	; 0xee <_ZN10MotorDrive6SetDIREhc>
+
+    DDRD &= ~(1 << ENCODER0) | ~(1 << ENCODER1);
+ 16c:	8a b1       	in	r24, 0x0a	; 10
+ 16e:	8a b9       	out	0x0a, r24	; 10
+    PORTD &= ~(1 << ENCODER0) | ~(1 << ENCODER1);
+ 170:	8b b1       	in	r24, 0x0b	; 11
+ 172:	8b b9       	out	0x0b, r24	; 11
+
+    EICRA |= (1 << ISC10) | (1 << ISC11);       //on rising edge interrupt PD2
+ 174:	e9 e6       	ldi	r30, 0x69	; 105
+ 176:	f0 e0       	ldi	r31, 0x00	; 0
+ 178:	80 81       	ld	r24, Z
+ 17a:	8c 60       	ori	r24, 0x0C	; 12
+ 17c:	80 83       	st	Z, r24
+    EICRA |= (1 << ISC00) | (1 << ISC01);       //on rising edge interrupt PD3
+ 17e:	80 81       	ld	r24, Z
+ 180:	83 60       	ori	r24, 0x03	; 3
+ 182:	80 83       	st	Z, r24
+    EIMSK |= (1 << INT0) | (1 << INT1);         //enables both interrupts
+ 184:	8d b3       	in	r24, 0x1d	; 29
+ 186:	83 60       	ori	r24, 0x03	; 3
+ 188:	8d bb       	out	0x1d, r24	; 29
+    //sei();                                    //enables global interrupts
+
+
+    return 0;
+}
+ 18a:	80 e0       	ldi	r24, 0x00	; 0
+ 18c:	df 91       	pop	r29
+ 18e:	cf 91       	pop	r28
+ 190:	08 95       	ret
+
+00000192 <__vector_1>:
+/*
+*ISR which takes care of encoder0
+*/
+
+ISR (INT0_vect)
+{
+ 192:	1f 92       	push	r1
+ 194:	0f 92       	push	r0
+ 196:	0f b6       	in	r0, 0x3f	; 63
+ 198:	0f 92       	push	r0
+ 19a:	11 24       	eor	r1, r1
+ 19c:	8f 93       	push	r24
+    static uint8_t encoder0=0;
+    encoder0+=1;                            //adds impulz
+ 19e:	80 91 06 01 	lds	r24, 0x0106	; 0x800106 <_ZZ10__vector_1E8encoder0>
+ 1a2:	8f 5f       	subi	r24, 0xFF	; 255
+ 1a4:	80 93 06 01 	sts	0x0106, r24	; 0x800106 <_ZZ10__vector_1E8encoder0>
+    if(encoder0>32700)encoder0=0;               //zeroes it so we can later measure speed
+}
+ 1a8:	8f 91       	pop	r24
+ 1aa:	0f 90       	pop	r0
+ 1ac:	0f be       	out	0x3f, r0	; 63
+ 1ae:	0f 90       	pop	r0
+ 1b0:	1f 90       	pop	r1
+ 1b2:	18 95       	reti
+
+000001b4 <__vector_2>:
+
+
+ISR (INT1_vect)
+{
+ 1b4:	1f 92       	push	r1
+ 1b6:	0f 92       	push	r0
+ 1b8:	0f b6       	in	r0, 0x3f	; 63
+ 1ba:	0f 92       	push	r0
+ 1bc:	11 24       	eor	r1, r1
+ 1be:	8f 93       	push	r24
+    static uint8_t encoder1=0;
+    encoder1+=1;
+ 1c0:	80 91 05 01 	lds	r24, 0x0105	; 0x800105 <_ZZ10__vector_2E8encoder1>
+ 1c4:	8f 5f       	subi	r24, 0xFF	; 255
+ 1c6:	80 93 05 01 	sts	0x0105, r24	; 0x800105 <_ZZ10__vector_2E8encoder1>
+    if(encoder1>32700)encoder1=0;
+}
+ 1ca:	8f 91       	pop	r24
+ 1cc:	0f 90       	pop	r0
+ 1ce:	0f be       	out	0x3f, r0	; 63
+ 1d0:	0f 90       	pop	r0
+ 1d2:	1f 90       	pop	r1
+ 1d4:	18 95       	reti
+
+000001d6 <_Z7initIICv>:
+
+/*
+ * Initializes TWI peripheral (400kHz)
+ */
+void initIIC(){
+    TWBR = 8;              //(F_CPU)/(16+2*TWBR) = 400kHZ
+ 1d6:	88 e0       	ldi	r24, 0x08	; 8
+ 1d8:	80 93 b8 00 	sts	0x00B8, r24	; 0x8000b8 <__TEXT_REGION_LENGTH__+0x7e00b8>
+    TWCR |= _BV(TWEN);
+ 1dc:	ec eb       	ldi	r30, 0xBC	; 188
+ 1de:	f0 e0       	ldi	r31, 0x00	; 0
+ 1e0:	80 81       	ld	r24, Z
+ 1e2:	84 60       	ori	r24, 0x04	; 4
+ 1e4:	80 83       	st	Z, r24
+ 1e6:	08 95       	ret
+
+000001e8 <_Z8initUARTv>:
 /*
  * initUART : sets baudrate, no parity,8-bit data, 1 stop-bit, asynchronous mode and enables RX, TX pins
  * TODO : Check taht USE_2X thing
 */
 void initUART(){
     UBRR0H = UBRRH_VALUE;
-  94:	10 92 c5 00 	sts	0x00C5, r1	; 0x8000c5 <__TEXT_REGION_LENGTH__+0x7e00c5>
+ 1e8:	10 92 c5 00 	sts	0x00C5, r1	; 0x8000c5 <__TEXT_REGION_LENGTH__+0x7e00c5>
     UBRR0L = UBRRL_VALUE;
-  98:	83 e3       	ldi	r24, 0x33	; 51
-  9a:	80 93 c4 00 	sts	0x00C4, r24	; 0x8000c4 <__TEXT_REGION_LENGTH__+0x7e00c4>
+ 1ec:	83 e3       	ldi	r24, 0x33	; 51
+ 1ee:	80 93 c4 00 	sts	0x00C4, r24	; 0x8000c4 <__TEXT_REGION_LENGTH__+0x7e00c4>
     #if USE_2X
     UCSR0A |= (1 << U2X0);
     #else
     UCSR0A &= ~(1 << U2X0);
-  9e:	e0 ec       	ldi	r30, 0xC0	; 192
-  a0:	f0 e0       	ldi	r31, 0x00	; 0
-  a2:	80 81       	ld	r24, Z
-  a4:	8d 7f       	andi	r24, 0xFD	; 253
-  a6:	80 83       	st	Z, r24
+ 1f2:	e0 ec       	ldi	r30, 0xC0	; 192
+ 1f4:	f0 e0       	ldi	r31, 0x00	; 0
+ 1f6:	80 81       	ld	r24, Z
+ 1f8:	8d 7f       	andi	r24, 0xFD	; 253
+ 1fa:	80 83       	st	Z, r24
     #endif
     //UBRRH = 0;              //setup for 9600 baudrate UBRRH_VALUE always wanted to use 2x mode
     //UBRRL = 6;
 
 
     UCSR0B |= _BV(RXEN0) | _BV(TXEN0);   //enables receiver and transmitter
-  a8:	a1 ec       	ldi	r26, 0xC1	; 193
-  aa:	b0 e0       	ldi	r27, 0x00	; 0
-  ac:	8c 91       	ld	r24, X
-  ae:	88 61       	ori	r24, 0x18	; 24
-  b0:	8c 93       	st	X, r24
+ 1fc:	a1 ec       	ldi	r26, 0xC1	; 193
+ 1fe:	b0 e0       	ldi	r27, 0x00	; 0
+ 200:	8c 91       	ld	r24, X
+ 202:	88 61       	ori	r24, 0x18	; 24
+ 204:	8c 93       	st	X, r24
 
     UCSR0C &= ~(_BV(UMSEL0) | _BV(UMSEL1));       //asynchronous mode
-  b2:	e2 ec       	ldi	r30, 0xC2	; 194
-  b4:	f0 e0       	ldi	r31, 0x00	; 0
-  b6:	80 81       	ld	r24, Z
-  b8:	8f 73       	andi	r24, 0x3F	; 63
-  ba:	80 83       	st	Z, r24
+ 206:	e2 ec       	ldi	r30, 0xC2	; 194
+ 208:	f0 e0       	ldi	r31, 0x00	; 0
+ 20a:	80 81       	ld	r24, Z
+ 20c:	8f 73       	andi	r24, 0x3F	; 63
+ 20e:	80 83       	st	Z, r24
     UCSR0C &= ~(_BV(UPM00) | _BV(UPM01));           //no parity mode
-  bc:	80 81       	ld	r24, Z
-  be:	8f 7c       	andi	r24, 0xCF	; 207
-  c0:	80 83       	st	Z, r24
+ 210:	80 81       	ld	r24, Z
+ 212:	8f 7c       	andi	r24, 0xCF	; 207
+ 214:	80 83       	st	Z, r24
     UCSR0C &= ~(_BV(USBS0));                      //1 stop-bit
-  c2:	80 81       	ld	r24, Z
-  c4:	87 7f       	andi	r24, 0xF7	; 247
-  c6:	80 83       	st	Z, r24
+ 216:	80 81       	ld	r24, Z
+ 218:	87 7f       	andi	r24, 0xF7	; 247
+ 21a:	80 83       	st	Z, r24
     UCSR0C |= (_BV(UCSZ01) | _BV(UCSZ00));           //8-bits of data
-  c8:	80 81       	ld	r24, Z
-  ca:	86 60       	ori	r24, 0x06	; 6
-  cc:	80 83       	st	Z, r24
+ 21c:	80 81       	ld	r24, Z
+ 21e:	86 60       	ori	r24, 0x06	; 6
+ 220:	80 83       	st	Z, r24
     UCSR0C &= ~(_BV(UCSZ02));
-  ce:	80 81       	ld	r24, Z
-  d0:	8b 7f       	andi	r24, 0xFB	; 251
-  d2:	80 83       	st	Z, r24
+ 222:	80 81       	ld	r24, Z
+ 224:	8b 7f       	andi	r24, 0xFB	; 251
+ 226:	80 83       	st	Z, r24
     #if USE_INTERRUPT
     UCSR0B |= _BV(TXCIE0);                  //enables interrupt on receive
-  d4:	8c 91       	ld	r24, X
-  d6:	80 64       	ori	r24, 0x40	; 64
-  d8:	8c 93       	st	X, r24
-  da:	08 95       	ret
+ 228:	8c 91       	ld	r24, X
+ 22a:	80 64       	ori	r24, 0x40	; 64
+ 22c:	8c 93       	st	X, r24
+ 22e:	08 95       	ret
 
-000000dc <__vector_18>:
+00000230 <__vector_18>:
 
 /*
  * TODO : Check whether it won't be necessary to clear some flags after the interrupt
  */
 
 ISR(USART_RX_vect){
-  dc:	1f 92       	push	r1
-  de:	0f 92       	push	r0
-  e0:	0f b6       	in	r0, 0x3f	; 63
-  e2:	0f 92       	push	r0
-  e4:	11 24       	eor	r1, r1
-  e6:	8f 93       	push	r24
-  e8:	9f 93       	push	r25
-  ea:	ef 93       	push	r30
-  ec:	ff 93       	push	r31
+ 230:	1f 92       	push	r1
+ 232:	0f 92       	push	r0
+ 234:	0f b6       	in	r0, 0x3f	; 63
+ 236:	0f 92       	push	r0
+ 238:	11 24       	eor	r1, r1
+ 23a:	8f 93       	push	r24
+ 23c:	9f 93       	push	r25
+ 23e:	ef 93       	push	r30
+ 240:	ff 93       	push	r31
     char receivedByte = UDR0;
-  ee:	80 91 c6 00 	lds	r24, 0x00C6	; 0x8000c6 <__TEXT_REGION_LENGTH__+0x7e00c6>
+ 242:	80 91 c6 00 	lds	r24, 0x00C6	; 0x8000c6 <__TEXT_REGION_LENGTH__+0x7e00c6>
     if((tracking < 2) && (receivedByte != '\n')){
-  f2:	90 91 01 01 	lds	r25, 0x0101	; 0x800101 <tracking>
-  f6:	92 30       	cpi	r25, 0x02	; 2
-  f8:	10 f4       	brcc	.+4      	; 0xfe <__vector_18+0x22>
-  fa:	8a 30       	cpi	r24, 0x0A	; 10
-  fc:	31 f4       	brne	.+12     	; 0x10a <__vector_18+0x2e>
+ 246:	90 91 01 01 	lds	r25, 0x0101	; 0x800101 <tracking>
+ 24a:	92 30       	cpi	r25, 0x02	; 2
+ 24c:	10 f4       	brcc	.+4      	; 0x252 <__vector_18+0x22>
+ 24e:	8a 30       	cpi	r24, 0x0A	; 10
+ 250:	31 f4       	brne	.+12     	; 0x25e <__vector_18+0x2e>
         direction[tracking] = receivedByte;
         directionReceived = 0;
         tracking++;
         }
     else{
         tracking = 0;
-  fe:	10 92 01 01 	sts	0x0101, r1	; 0x800101 <tracking>
+ 252:	10 92 01 01 	sts	0x0101, r1	; 0x800101 <tracking>
         directionReceived = 1;
- 102:	81 e0       	ldi	r24, 0x01	; 1
- 104:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <_edata>
- 108:	0d c0       	rjmp	.+26     	; 0x124 <__vector_18+0x48>
+ 256:	81 e0       	ldi	r24, 0x01	; 1
+ 258:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <_edata>
+ 25c:	0d c0       	rjmp	.+26     	; 0x278 <__vector_18+0x48>
  */
 
 ISR(USART_RX_vect){
     char receivedByte = UDR0;
     if((tracking < 2) && (receivedByte != '\n')){
         direction[tracking] = receivedByte;
- 10a:	e0 91 01 01 	lds	r30, 0x0101	; 0x800101 <tracking>
- 10e:	f0 e0       	ldi	r31, 0x00	; 0
- 110:	ee 5f       	subi	r30, 0xFE	; 254
- 112:	fe 4f       	sbci	r31, 0xFE	; 254
- 114:	80 83       	st	Z, r24
+ 25e:	e0 91 01 01 	lds	r30, 0x0101	; 0x800101 <tracking>
+ 262:	f0 e0       	ldi	r31, 0x00	; 0
+ 264:	ee 5f       	subi	r30, 0xFE	; 254
+ 266:	fe 4f       	sbci	r31, 0xFE	; 254
+ 268:	80 83       	st	Z, r24
         directionReceived = 0;
- 116:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <_edata>
+ 26a:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <_edata>
         tracking++;
- 11a:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <tracking>
- 11e:	8f 5f       	subi	r24, 0xFF	; 255
- 120:	80 93 01 01 	sts	0x0101, r24	; 0x800101 <tracking>
+ 26e:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <tracking>
+ 272:	8f 5f       	subi	r24, 0xFF	; 255
+ 274:	80 93 01 01 	sts	0x0101, r24	; 0x800101 <tracking>
         directionReceived = 1;
     }
 
 
 
 }
- 124:	ff 91       	pop	r31
- 126:	ef 91       	pop	r30
- 128:	9f 91       	pop	r25
- 12a:	8f 91       	pop	r24
- 12c:	0f 90       	pop	r0
- 12e:	0f be       	out	0x3f, r0	; 63
- 130:	0f 90       	pop	r0
- 132:	1f 90       	pop	r1
- 134:	18 95       	reti
+ 278:	ff 91       	pop	r31
+ 27a:	ef 91       	pop	r30
+ 27c:	9f 91       	pop	r25
+ 27e:	8f 91       	pop	r24
+ 280:	0f 90       	pop	r0
+ 282:	0f be       	out	0x3f, r0	; 63
+ 284:	0f 90       	pop	r0
+ 286:	1f 90       	pop	r1
+ 288:	18 95       	reti
 
-00000136 <_exit>:
- 136:	f8 94       	cli
+0000028a <_exit>:
+ 28a:	f8 94       	cli
 
-00000138 <__stop_program>:
- 138:	ff cf       	rjmp	.-2      	; 0x138 <__stop_program>
+0000028c <__stop_program>:
+ 28c:	ff cf       	rjmp	.-2      	; 0x28c <__stop_program>
