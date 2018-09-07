@@ -75,8 +75,6 @@ uint8_t MotorDrive::initMotors(){
     EICRA |= (1 << ISC10) | (1 << ISC11);       //on rising edge interrupt PD2
     EICRA |= (1 << ISC00) | (1 << ISC01);       //on rising edge interrupt PD3
     EIMSK |= (1 << INT0) | (1 << INT1);         //enables both interrupts
-    //sei();                                    //enables global interrupts
-
 
     return 0;
 }
@@ -117,17 +115,33 @@ ISR (INT1_vect)
 /*
 *INPUT : 2 X speed of motor in percents (0 - 100)
 *FUNCTION : sets the speed in timer compare registers
-*OUTPUT : 0
+*OUTPUT : none
 */
-uint8_t MotorDrive::SetSpeedBoth(uint8_t a_speed, uint8_t b_speed){
+void MotorDrive::SetSpeedBoth(int8_t speed){
+    if(speed>0){
+         SetDIR(1,'A');
+         SetDIR(1,'B');
+      }
+      else{
+         SetDIR(-1,'A');
+         SetDIR(-1,'B');
+         speed = speed*-1;
+      }
+
+
     loop_until_bit_is_set(TIFR0,TOV0);
-    if(a_speed > 100)OCR0A = 255;
-    else OCR0A = ((5*a_speed)>>1);          //conversion to 0-250 from 0-100
-    if(b_speed > 100)OCR0B = 255;
-    else OCR0B = ((5*b_speed)>>1);
-    return 0;
+    if(speed > 100){
+        OCR0A = 215;
+        OCR0B = 215;
+    }
+    else{
+        OCR0A = ((4*speed)>>1)+15;          //conversion from 0-100 to 0-215
+        OCR0B = OCR0A;
+    }
 }
 
+
+//TODO: maybe rework these functions bellow
 /*
 *INPUT : speed of motor in percents (0 - 100)
 *FUNCTION : sets the speed in timer compare register for A motor

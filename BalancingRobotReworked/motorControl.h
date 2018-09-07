@@ -43,7 +43,7 @@ class MotorDrive {
 
 
         uint8_t SetDIR(uint8_t, char);
-        uint8_t SetSpeedBoth(uint8_t, uint8_t);
+        void SetSpeedBoth(int8_t);
         uint8_t SetSpeedA(uint8_t);
         uint8_t SetSpeedB(uint8_t);
         uint8_t initMotors();

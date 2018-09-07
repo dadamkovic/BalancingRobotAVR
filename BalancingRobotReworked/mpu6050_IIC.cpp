@@ -11,7 +11,7 @@
  * Initializes TWI peripheral (400kHz)
  */
 void initIIC(){
-    TWBR = 8;              //(F_CPU)/(16+2*TWBR) = 400kHZ
+    TWBR = 2;              //(F_CPU)/(16+2*TWBR) = 400kHZ
     TWCR |= _BV(TWEN);
 }
 
@@ -74,7 +74,7 @@ uint8_t IICreadNack(){
  * to return x,y angles from gyro and accelerometer (if returnRaw = 0) or data from MPU (returnRaw = 1)
  */
 
-uint16_t* IICreadMPU(uint16_t* dataOut,uint8_t returnRaw){
+void IICreadMPU(uint16_t* dataOut,uint8_t returnRaw){
     IICsendStart();
     IICsendData(MPUADDRESS_READ);
     IICsendData(MPUACCEL_REGISTER);
@@ -100,13 +100,10 @@ uint16_t* IICreadMPU(uint16_t* dataOut,uint8_t returnRaw){
         for(uint8_t i;i<7;i++){
             dataOut[i] = data[i];
         }
-        return dataOut;
     }
     else{
         dataOut[0] = xAngle;
         dataOut[1] = yAngle;
         dataOut[2] = xGyro;
         dataOut[3] = yGyro;    }
-
-    return dataOut;
 }

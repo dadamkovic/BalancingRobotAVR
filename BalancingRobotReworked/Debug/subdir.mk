@@ -9,6 +9,7 @@ CPP_SRCS += \
 ../motorControl.cpp \
 ../mpu6050_IIC.cpp \
 ../pid.cpp \
+../timeTracking.cpp \
 ../uart.cpp 
 
 OBJS += \
@@ -17,6 +18,7 @@ OBJS += \
 ./motorControl.o \
 ./mpu6050_IIC.o \
 ./pid.o \
+./timeTracking.o \
 ./uart.o 
 
 CPP_DEPS += \
@@ -25,6 +27,7 @@ CPP_DEPS += \
 ./motorControl.d \
 ./mpu6050_IIC.d \
 ./pid.d \
+./timeTracking.d \
 ./uart.d 
 
 

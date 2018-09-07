@@ -25,7 +25,7 @@ void IICsendData(uint8_t);
 uint8_t readAck();
 uint8_t readNack();
 
-uint16_t* IICreadMPU(uint16_t*);
+void IICreadMPU(uint16_t*,uint8_t);
 
 
 #endif /* MPU6050_IIC_H_ */
