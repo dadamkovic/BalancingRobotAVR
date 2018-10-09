@@ -16,7 +16,6 @@
 #include "mpu6050_IIC.h"
 #include "pid.h"
 #include "motorControl.h"
-#include "kalman.h"
 #include "timeTracking.h"
 
 #define ANGLE_OFFSET 2.2

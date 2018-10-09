@@ -4,7 +4,6 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../kalman.cpp \
 ../main.cpp \
 ../motorControl.cpp \
 ../mpu6050_IIC.cpp \
@@ -13,7 +12,6 @@ CPP_SRCS += \
 ../uart.cpp 
 
 OBJS += \
-./kalman.o \
 ./main.o \
 ./motorControl.o \
 ./mpu6050_IIC.o \
@@ -22,7 +20,6 @@ OBJS += \
 ./uart.o 
 
 CPP_DEPS += \
-./kalman.d \
 ./main.d \
 ./motorControl.d \
 ./mpu6050_IIC.d \
