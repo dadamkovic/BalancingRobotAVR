@@ -11,8 +11,9 @@
  * Initializes TWI peripheral (400kHz)
  */
 void initIIC(){
-    TWBR = 2;              //(F_CPU)/(16+2*TWBR) = 400kHZ
-    TWCR |= _BV(TWEN);
+    TWBR = 3;              //(F_CPU)/(16+2*TWBR*4^TWPS) = 400kHZ
+    TWSR &= ~(_BV(TWPS1)|_BV(TWPS0));   //TWPS = 1
+    TWCR |= _BV(TWEN);      //enables IIC
 }
 
 /*
@@ -97,7 +98,7 @@ void IICreadMPU(uint16_t* dataOut,uint8_t returnRaw){
     double yGyro = data[5] / 131.0;
 
     if(returnRaw){
-        for(uint8_t i;i<7;i++){
+        for(uint8_t i=0;i<7;i++){
             dataOut[i] = data[i];
         }
     }

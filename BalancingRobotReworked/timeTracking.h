@@ -13,9 +13,13 @@
 
 void clockInit();
 void clockStart();
-double clockTime();
+float clockTime();
 void clockReset();
 void clockShutdown();
+
+void encoderClockInit();
+void encoderClockStart();
+void encoderClockStop();
 
 
 

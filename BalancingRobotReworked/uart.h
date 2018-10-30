@@ -13,10 +13,7 @@
 
 
 #define U2X 0
-#define UMSEL0 6
-#define UMSEL1 7
 #define BAUD 9600       ///change for different baudrate
-#define USE_2X 0
 #define USE_INTERRUPT 1
 
 #include <util/setbaud.h>
@@ -25,17 +22,16 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-extern volatile char direction[3];
-extern volatile uint8_t tracking;
-extern volatile uint8_t directionReceived;
+extern volatile char controllerData[3];
+extern volatile uint8_t receiveCommandFlag;
 
-
-void initUART();
-void sendChar(uint8_t);
-void sendString(const char[]);
-char receiveChar();
-void receiveString(char*);
-bool avaliableSerial();
+void initControllerUART();
+void initInterfaceUART();
+void interfaceSendChar(uint8_t);
+void interfaceSendString(const char[]);
+char interfaceReceiveChar();
+void interfaceReceiveString(char*);
+bool interfaceAvaliableSerial();
 
 
 

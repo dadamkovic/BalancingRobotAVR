@@ -15,27 +15,14 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-#define ENCODER0 2
-#define ENCODER1 3
-#define ENCODER_STATES 272
-#define TIME_OF_SAMPLE 25
-
 
 class MotorDrive {
     public:
         float Motor_SPEED[2];
-        float Motor_A_SPEED = 0;
-        float Motor_B_SPEED = 0;
-        volatile uint8_t encoder0 = 0;
-        volatile uint8_t encoder1 = 0;
-        //MotorDrive();
+
         MotorDrive(volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2)
         : _Motor_A_PORT(a_port), _Motor_B_PORT(b_port), _Motor_A_PIN_1(a_pin_1), _Motor_A_PIN_2(a_pin_2),
         _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {
-
-        /*
-         * INIT :   PORT for motor A , IN1, IN2, PORT for motor B, IN3, IN4
-         */
 
         }
         ~MotorDrive(){

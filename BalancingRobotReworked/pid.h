@@ -18,10 +18,14 @@ class PID{
         float P = 1;
         float I = 1;
         float D = 1;
+        float Tf = 30;
         float old_error=0;
-        float error_sum = 0;
-        float giveOutput(double,double,double);
+        float error_integral = 0;
+        float error_derivative = 0;
+        float giveOutput(float,float,float);
         void changeP(float);
+        void changeI(float);
+        void changeD(float);
     };
 
 

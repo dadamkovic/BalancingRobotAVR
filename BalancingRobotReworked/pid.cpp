@@ -8,11 +8,13 @@
 
 #include "pid.h"
 
-float PID::giveOutput(double input, double target, double dt){
+float PID::giveOutput(float input, float target, float dt){
     float output  = 0;
-    float error = target - input;
-    output = P*(error)+I*(error_sum+error)*dt+D*(error-old_error)/dt;
-    error_sum += error;
+    float error = input-target;
+    error_integral += error;
+    error_derivative = (Tf*error_derivative + (error - old_error))/(dt + Tf);       //implements filtering constant Tf
+    output = P*(error)+I*(error_integral)*dt+D*error_derivative;
+
     old_error = error;
     return output;
 }
@@ -21,4 +23,11 @@ void PID::changeP(float newP){
   P = newP;
 }
 
+void PID::changeI(float newI){
+  I = newI;
+}
+
+void PID::changeD(float newD){
+  D = newD;
+}
 
