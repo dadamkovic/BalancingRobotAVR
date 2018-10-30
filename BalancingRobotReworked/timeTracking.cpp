@@ -13,7 +13,7 @@ void clockStart(){
 }
 
 float clockTime(){
-    return (TCNT5/65535)*0.032768;
+    return ((float)TCNT5/65535)*0.032768;
 }
 
 void clockReset(){
@@ -44,3 +44,6 @@ void encoderClockStart(){
 void encoderClockStop(){
     TCCR4B &= ~(_BV(CS40)|_BV(CS42)|_BV(CS41));      //clock stopped
 }
+
+
+

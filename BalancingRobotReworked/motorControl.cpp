@@ -88,27 +88,27 @@ float* MotorDrive::GetSpeed(){
 *FUNCTION : sets the speed in timer compare registers
 *OUTPUT : none
 */
-void MotorDrive::SetSpeedBoth(int8_t speed){
-    float calcSpeed = speed*2.55;
-    if(speed>0){
+void MotorDrive::SetSpeedBoth(int8_t speedA){
+    float calcSpeed = (float)speedA*2.55;
+    if(speedA>0){
          SetDIR(1,'A');
          SetDIR(1,'B');
       }
       else{
          SetDIR(-1,'A');
          SetDIR(-1,'B');
-         speed = speed*-1;
+         speedA = speedA*-1;
       }
 
 
-    loop_until_bit_is_set(TIFR0,TOV0);
-    if(speed > 100){
-        OCR0A = 255;
-        OCR0B = 255;
+    //loop_until_bit_is_set(TIFR0,TOV0);
+    if(speedA > 100){
+        OCR1A = 255;
+        OCR1B = 255;
     }
     else{
-        OCR0A = uint8_t(calcSpeed);          //conversion from 0-100 to 0-255
-        OCR0B = OCR0A;
+        OCR1A = uint8_t(calcSpeed);          //conversion from 0-100 to 0-255
+        OCR1B = OCR1A;
     }
 }
 
@@ -137,7 +137,6 @@ uint8_t MotorDrive::SetSpeedB(uint8_t speed){
     else OCR0B = ((5*speed)>>1);
     return 0;
 }
-
 
 
 

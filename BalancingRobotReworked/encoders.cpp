@@ -10,8 +10,7 @@
 #include "timeTracking.h"
 
 
-extern volatile int8_t encoderAB;
-volatile int16_t encoderCD;
+extern volatile int16_t encoderAB, encoderCD;
 volatile extern float speedAB,speedCD;
 
 
@@ -28,7 +27,7 @@ void encodersInit(){
     EIMSK |=  _BV(INT4) | _BV(INT5);            //enables interrupts on PE4, PE5
 
     encoderClockInit();
-    //encoderClockStart();
+    encoderClockStart();
 };
 
 
@@ -55,13 +54,13 @@ ISR(INT5_vect){
  *
  */
 
-ISR(TIMER5_COMPB_vect){
+
+
+ISR(TIMER4_COMPB_vect){
     speedAB = (encoderAB*0.0168)/0.05;      //374 tickov na 2pi ==> 2pi/374 = 0.0168
     speedCD = (encoderAB*0.0168)/0.05;      //casova konstanta pre meranie je dt = 0.05s
-    encoderAB ++;
-    encoderAB--;
+    encoderAB = 0;
+    //encoderAB = 0;
     TCNT4 = 0;
 }
-
-
 
