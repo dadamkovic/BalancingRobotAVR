@@ -11,6 +11,7 @@
 #ifndef UART_H
 #define UART_H
 
+#include <stdlib.h>
 
 #define U2X 0
 #define BAUD 9600       ///change for different baudrate
@@ -32,10 +33,10 @@ void interfaceSendString(const char[]);
 char interfaceReceiveChar();
 void interfaceReceiveString(char*);
 bool interfaceAvaliableSerial();
+void interfaceSendFloat(float);
 
 
 
 
 #endif // UART_H
-
 

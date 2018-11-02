@@ -8,11 +8,10 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include "timeTracking.h"
-#include "motorControl.h"
 
-extern volatile int8_t encoderAB;
-volatile int16_t encoderCD;
-//volatile extern float speedAB,speedCD;
+
+extern volatile int16_t encoderAB, encoderCD;
+volatile extern float speedAB,speedCD;
 
 
 /*GPIO - initialization routines for interrupt handling
@@ -55,13 +54,13 @@ ISR(INT5_vect){
  *
  */
 
-ISR(TIMER5_COMPB_vect){
-    motors.speedAB = (encoderAB*0.0168)/0.05;      //374 tickov na 2pi ==> 2pi/374 = 0.0168
-    motors.speedCD = (encoderAB*0.0168)/0.05;      //casova konstanta pre meranie je dt = 0.05s
-    encoderAB=0;
-    encoderAB=0;
+
+
+ISR(TIMER4_COMPB_vect){
+    speedAB = (encoderAB*0.0168)/0.05;      //374 tickov na 2pi ==> 2pi/374 = 0.0168
+    speedCD = (encoderAB*0.0168)/0.05;      //casova konstanta pre meranie je dt = 0.05s
+    encoderAB = 0;
+    //encoderAB = 0;
     TCNT4 = 0;
 }
-
-
 

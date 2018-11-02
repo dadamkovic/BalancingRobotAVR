@@ -7,7 +7,7 @@
 
 
 #include "uart.h"
-#define USE_2X 1        //twice the speed is unnecessary
+#define USE_2X 0        //twice the speed is unnecessary
 
 /*
  * initUART : sets baudrate, no parity,8-bit data, 1 stop-bit, asynchronous mode and enables RX, TX pins
@@ -28,7 +28,7 @@ void initControllerUART(){
     UCSR3C &= ~(_BV(UPM30) | _BV(UPM31));           //no parity mode
     UCSR3C &= ~(_BV(USBS3));                      //1 stop-bit
     UCSR3C |= (_BV(UCSZ31) | _BV(UCSZ30));           //8-bits of data
-    UCSR3C &= ~(_BV(UCSZ32));
+    UCSR3B &= ~(_BV(UCSZ32));
     #if USE_INTERRUPT
     UCSR3B |= _BV(RXCIE3);                  //enables interrupt on receive
     UCSR3B |= _BV(TXCIE3);                  //enables interrupt of transfer complete
@@ -72,19 +72,19 @@ ISR(USART3_RX_vect){
 void initInterfaceUART(){
     UBRR0H = UBRRH_VALUE;
     UBRR0L = UBRRL_VALUE;
-    /*#if USE_2X
+    #if USE_2X
     UCSR0A |= (1 << U2X0);
     #else
     UCSR0A &= ~(1 << U2X0);
-    #endif*/
+    #endif
 
 
 
-    //UCSR0C &= ~(_BV(UMSEL00) | _BV(UMSEL01));       //asynchronous mode
-    //UCSR0C &= ~(_BV(UPM00) | _BV(UPM01));           //no parity mode
-    //UCSR0C &= ~(_BV(USBS0));                      //1 stop-bit
+    UCSR0C &= ~(_BV(UMSEL00) | _BV(UMSEL01));       //asynchronous mode
+    UCSR0C &= ~(_BV(UPM00) | _BV(UPM01));           //no parity mode
+    UCSR0C &= ~(_BV(USBS0));                      //1 stop-bit
     UCSR0C |= (_BV(UCSZ01) | _BV(UCSZ00));           //8-bits of data
-    //UCSR0C &= ~(_BV(UCSZ02));
+    UCSR0B &= ~(_BV(UCSZ02));
 
 
     UCSR0B |= _BV(RXEN0) | _BV(TXEN0);   //enables receiver and transmitter
@@ -138,6 +138,11 @@ void interfaceSendString(const char string2send[]){
     }
 }
 
+void interfaceSendFloat(float float2send){
+    char output[10];
+    dtostrf(float2send, 5, 4, output);
+    interfaceSendString(output);
+}
 
 
 
