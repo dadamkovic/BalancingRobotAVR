@@ -13,7 +13,7 @@ void clockStart(){
 }
 
 float clockTime(){
-    return (TCNT5/65535)*0.032768;
+    return (TCNT5/65535)*0.032768;        //calculates time based on the amount is TCNT5 already accumulated
 }
 
 void clockReset(){

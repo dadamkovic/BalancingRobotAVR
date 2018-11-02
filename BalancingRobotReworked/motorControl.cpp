@@ -76,10 +76,6 @@ uint8_t MotorDrive::initMotors(){
     return 0;
 }
 
-float* MotorDrive::GetSpeed(){
-
-    return Motor_SPEED;
-    }
 
 
 
@@ -101,14 +97,14 @@ void MotorDrive::SetSpeedBoth(int8_t speed){
       }
 
 
-    loop_until_bit_is_set(TIFR0,TOV0);
+    loop_until_bit_is_set(TIFR1,TOV1);
     if(speed > 100){
-        OCR0A = 255;
-        OCR0B = 255;
+        OCR1A = 255;
+        OCR1B = 255;
     }
     else{
-        OCR0A = uint8_t(calcSpeed);          //conversion from 0-100 to 0-255
-        OCR0B = OCR0A;
+        OCR1A = uint8_t(calcSpeed);          //conversion from 0-100 to 0-255
+        OCR1B = OCR1A;
     }
 }
 
@@ -120,9 +116,9 @@ void MotorDrive::SetSpeedBoth(int8_t speed){
 *OUTPUT : 0
 */
 uint8_t MotorDrive::SetSpeedA(uint8_t speed){
-  loop_until_bit_is_set(TIFR0,TOV0);
-    if(speed > 100)OCR0A = 255;
-    else OCR0A = ((5*speed)>>1);
+  loop_until_bit_is_set(TIFR1,TOV1);
+    if(speed > 100)OCR1A = 255;
+    else OCR1A = ((5*speed)>>1);
     return 0;
 }
 
@@ -132,9 +128,9 @@ uint8_t MotorDrive::SetSpeedA(uint8_t speed){
 *OUTPUT : 0
 */
 uint8_t MotorDrive::SetSpeedB(uint8_t speed){
-  loop_until_bit_is_set(TIFR0,TOV0);
-    if(speed > 100)OCR0B = 255;
-    else OCR0B = ((5*speed)>>1);
+  loop_until_bit_is_set(TIFR1,TOV1);
+    if(speed > 100)OCR1B = 255;
+    else OCR1B = ((5*speed)>>1);
     return 0;
 }
 

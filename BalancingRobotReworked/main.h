@@ -25,7 +25,7 @@
 volatile char controllerData[3] = {'\0','\0','\0'};   //initialized to all '\0'            //
 volatile uint8_t receiveCommandFlag=0;
 volatile int8_t encoderAB = 6;
-volatile float speedAB,speedCD = 0;
+//volatile float speedAB,speedCD = 0;
 
 
 void encodersInit();

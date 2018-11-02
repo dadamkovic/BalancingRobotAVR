@@ -16,7 +16,7 @@ avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/EEPROMFi
 avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/EEPROMFromConfig=true
 avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/FlashFile=
 avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/FlashFromConfig=true
-avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/NoChipErase=true
+avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/NoChipErase=false
 avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/NoSigCheck=false
 avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/NoVerify=false
 avrtarget/de.innot.avreclipse.configuration.app.debug.858111720/avrdude/NoWrite=false

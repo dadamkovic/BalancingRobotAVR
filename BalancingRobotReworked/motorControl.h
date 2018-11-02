@@ -34,11 +34,11 @@ class MotorDrive {
         uint8_t SetSpeedA(uint8_t);
         uint8_t SetSpeedB(uint8_t);
         uint8_t initMotors();
-        float* GetSpeed();
 
     private:
         volatile uint8_t *_Motor_A_PORT;
         volatile uint8_t *_Motor_B_PORT;
+        volatile float speedAB, speedCD;
         uint8_t _Motor_A_PIN_1;
         uint8_t _Motor_A_PIN_2;
         uint8_t _Motor_B_PIN_1;
