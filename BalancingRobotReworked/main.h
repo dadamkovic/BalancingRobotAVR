@@ -24,13 +24,12 @@
 
 volatile char controllerData[3] = {'\0','\0','\0'};   //initialized to all '\0'            //
 volatile uint8_t receiveCommandFlag=0;
-volatile int16_t encoderAB, encoderCD = 0;
-volatile float speedAB,speedCD = 0;
-static uint8_t counter = 0;
+static uint16_t counter = 0;
 float MPUData[7];                            //will contain data from MPU
 
 void encodersInit();                        //didn't include this in any other header file
-
+void initServo();
+uint8_t setServoAngle(float);
 
 /*
  * INPUT : x = value to constrain, minValue - maxValue = constrain borders

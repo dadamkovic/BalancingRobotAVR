@@ -34,7 +34,9 @@ class MotorDrive {
         uint8_t SetSpeedA(uint8_t);
         uint8_t SetSpeedB(uint8_t);
         uint8_t initMotors();
-        float* GetSpeed();
+
+        volatile float speedAB,speedCD;
+        volatile int16_t encoderAB, encoderCD;
 
     private:
         volatile uint8_t *_Motor_A_PORT;

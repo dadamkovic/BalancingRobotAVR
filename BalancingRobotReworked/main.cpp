@@ -25,7 +25,7 @@ int main(void){
     initInterfaceUART();
     encodersInit();
     initIIC();                                      //initializes TWI interface
-
+    initServo();
     motors.initMotors();                            //initiates motors
     PID MPU(20,0,0);                                //initiates PID for motors
     sei();                                          //need to use interrupts to read data from UART
@@ -58,7 +58,7 @@ int main(void){
   if((counter == 200) & (DEBUG_OUTPUT == 1)){
         interfaceSendString("Dt was: ");
         interfaceSendFloat(dt);
-        interfaceSendString("\naccAngle is: ");
+        interfaceSendString("\nAccAngle is: ");
         interfaceSendFloat(MPUData[1]);
         interfaceSendString("\nGyroAngle is:");
         interfaceSendFloat(gyroYAngle);
@@ -67,8 +67,11 @@ int main(void){
         interfaceSendFloat(compYAngle);
         interfaceSendChar('\n');
         counter=0;
+
     }
+
     else counter++;
+    setServoAngle(-120);
     //_delay_ms(10);
 
     }

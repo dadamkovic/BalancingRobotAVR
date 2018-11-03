@@ -76,12 +76,6 @@ uint8_t MotorDrive::initMotors(){
     return 0;
 }
 
-float* MotorDrive::GetSpeed(){
-
-    return Motor_SPEED;
-    }
-
-
 
 /*
 *INPUT : 2 X speed of motor in percents (0 - 100)
@@ -120,8 +114,8 @@ void MotorDrive::SetSpeedBoth(int8_t speedA){
 *OUTPUT : 0
 */
 uint8_t MotorDrive::SetSpeedA(uint8_t speed){
-  loop_until_bit_is_set(TIFR0,TOV0);
-    if(speed > 100)OCR0A = 255;
+  loop_until_bit_is_set(TIFR1,TOV1);
+    if(speed > 100)OCR1A = 255;
     else OCR0A = ((5*speed)>>1);
     return 0;
 }
@@ -132,9 +126,9 @@ uint8_t MotorDrive::SetSpeedA(uint8_t speed){
 *OUTPUT : 0
 */
 uint8_t MotorDrive::SetSpeedB(uint8_t speed){
-  loop_until_bit_is_set(TIFR0,TOV0);
-    if(speed > 100)OCR0B = 255;
-    else OCR0B = ((5*speed)>>1);
+  loop_until_bit_is_set(TIFR1,TOV1);
+    if(speed > 100)OCR1B = 255;
+    else OCR1B = ((5*speed)>>1);
     return 0;
 }
 
