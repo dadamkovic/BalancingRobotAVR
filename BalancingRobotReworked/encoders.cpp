@@ -16,11 +16,11 @@ extern MotorDrive motors;
 
 
 /*GPIO - initialization routines for interrupt handling
- * pins used are ==> (PE4, PG5), (PE5,PE3)
+ * pins used are ==> (PE4, PA0), (PE5,PA2)
  */
 void encodersInit(){
-    DDRG &= ~(_BV(PG5));
-    DDRE &= ~(_BV(PE4)| _BV(PE5) | _BV(PE3));
+    DDRA &= ~(_BV(PA0) | _BV(PA2));
+    DDRE &= ~(_BV(PE4)| _BV(PE5));
 
     EICRB |= (_BV(ISC40) | _BV(ISC41));         //PE4 as interrupt on rising edge
     EICRB |= (_BV(ISC50) | _BV(ISC51));         //PE5 as interrupt on rising edge
@@ -35,7 +35,7 @@ void encodersInit(){
 
 
 ISR(INT4_vect){
-    if( PING & _BV(PG5))motors.encoderAB++;
+    if( PINA & _BV(PA0))motors.encoderAB++;
     else motors.encoderAB--;
 };
 
@@ -45,7 +45,7 @@ ISR(INT4_vect){
  */
 
 ISR(INT5_vect){
-    if(PINE & _BV(PE3))motors.encoderCD++;
+    if(PINA & _BV(PA2))motors.encoderCD++;
     else motors.encoderCD--;
 }
 

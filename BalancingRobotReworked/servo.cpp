@@ -26,7 +26,7 @@ void initServo(){
 
 uint8_t setServoAngle(float target){
     //if((target<-99) | (target>99))return 1;
-    float timingRegister = (target/90)*1000;
+    float timingRegister = (target/90)*2000;
     OCR3A = 3000 + (int16_t)timingRegister;
     return 0;
 }

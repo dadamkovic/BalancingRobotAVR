@@ -9,7 +9,7 @@
 
 #ifndef PID_H_
 #define PID_H_
-
+#include "inttypes.h"
 class PID{
     public:
         PID(float proportional, float integrate, float derivative):
@@ -22,13 +22,22 @@ class PID{
         float old_error=0;
         float error_integral = 0;
         float error_derivative = 0;
-        float giveOutput(float,float,float);
+        float giveOutput(float,float,float,uint16_t constrainI);
         void changeP(float);
         void changeI(float);
         void changeD(float);
     };
 
+/*
+ * INPUT : x = value to constrain, minValue - maxValue = constrain borders
+ * OUTPUT :
+ */
 
+static int16_t constrain(int16_t x, int16_t minValue, int16_t maxValue){
+    if(x < minValue)return minValue;
+    else if(x > maxValue)return maxValue;
+    else return x;
+}
 
 
 #endif /* PID_H_ */

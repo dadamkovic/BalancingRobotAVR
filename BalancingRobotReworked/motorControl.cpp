@@ -15,7 +15,7 @@
 *FUNCTION : sets PINS based on the desired direction of spin
 *OUTPUT : 0
 */
-uint8_t MotorDrive::SetDIR(uint8_t dir, char motor){
+uint8_t MotorDrive::SetDIR(int8_t dir, char motor){
     volatile uint8_t *motor_port;
     uint8_t ctrlx1;
     uint8_t ctrlx0;
@@ -54,7 +54,7 @@ uint8_t MotorDrive::SetDIR(uint8_t dir, char motor){
 */
 uint8_t MotorDrive::initMotors(){
 
-    DDRB |= (_BV(PD6) | _BV(PD5)) ;         // PD6, PD5 is now an output
+    DDRB |= (_BV(PB6) | _BV(PB5)) ;         // PD6, PD5 is now an output
     OCR1A = 0;                                  //motors initialized to 0V - shutdown
     OCR1B = 0;
 
@@ -83,7 +83,6 @@ uint8_t MotorDrive::initMotors(){
 *OUTPUT : none
 */
 void MotorDrive::SetSpeedBoth(int8_t speedA){
-    float calcSpeed = (float)speedA*2.55;
     if(speedA>0){
          SetDIR(1,'A');
          SetDIR(1,'B');
@@ -101,7 +100,7 @@ void MotorDrive::SetSpeedBoth(int8_t speedA){
         OCR1B = 255;
     }
     else{
-        OCR1A = uint8_t(calcSpeed);          //conversion from 0-100 to 0-255
+        OCR1A = (speedA<<1)+50;          //conversion from 0-100 to 0-255
         OCR1B = OCR1A;
     }
 }

@@ -31,16 +31,7 @@ void encodersInit();                        //didn't include this in any other h
 void initServo();
 uint8_t setServoAngle(float);
 
-/*
- * INPUT : x = value to constrain, minValue - maxValue = constrain borders
- * OUTPUT :
- */
 
-int8_t constrain(int8_t x, int8_t minValue, int8_t maxValue){
-    if(x < minValue)return minValue;
-    else if(x > maxValue)return maxValue;
-    else return x;
-}
 
 
 #endif /* MAIN_H_ */
