@@ -22,8 +22,6 @@ void encoderClockInit();
 void encoderClockStart();
 void encoderClockStop();
 
-extern volatile int16_t encoderAB;
-extern volatile float speedAB, speedCD;
 
 
 #endif /* TIMETRACKING_H_ */

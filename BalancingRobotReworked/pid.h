@@ -22,7 +22,7 @@ class PID{
         float old_error=0;
         float error_integral = 0;
         float error_derivative = 0;
-        float giveOutput(float,float,float,uint16_t constrainI);
+        float giveOutput(float,float,float,float);
         void changeP(float);
         void changeI(float);
         void changeD(float);
@@ -33,7 +33,7 @@ class PID{
  * OUTPUT :
  */
 
-static int16_t constrain(int16_t x, int16_t minValue, int16_t maxValue){
+static float constrain(float x, float minValue, float maxValue){
     if(x < minValue)return minValue;
     else if(x > maxValue)return maxValue;
     else return x;

@@ -24,14 +24,19 @@
 #include <util/delay.h>
 
 extern volatile char controllerData[3];
-extern volatile uint8_t receiveCommandFlag;
+extern volatile uint8_t receivingCommandFlag;
 
+void initBLEModul();
 void initControllerUART();
 void initInterfaceUART();
 void interfaceSendChar(uint8_t);
+void controllerSendChar(uint8_t);
 void interfaceSendString(const char[]);
+void controllerSendString(const char[]);
 char interfaceReceiveChar();
-void interfaceReceiveString(char*);
+char controllerReceiveChar();
+void interfaceReceiveString(char[]);
+void controllerReceiveString(char[]);
 bool interfaceAvaliableSerial();
 void interfaceSendFloat(float);
 

@@ -70,6 +70,9 @@ uint8_t MotorDrive::initMotors(){
     TCCR1B |= _BV(CS11);
     TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 8, f = 7,8kHz
 
+
+    *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));
+    *_Motor_B_DDR |= (_BV(_Motor_B_PIN_1)|(_BV(_Motor_B_PIN_2)));
     SetDIR(1,'A');                              //both motors forward
     SetDIR(1,'B');
 
@@ -115,7 +118,7 @@ void MotorDrive::SetSpeedBoth(int8_t speedA){
 uint8_t MotorDrive::SetSpeedA(uint8_t speed){
   loop_until_bit_is_set(TIFR1,TOV1);
     if(speed > 100)OCR1A = 255;
-    else OCR0A = ((5*speed)>>1);
+    else OCR1A = ((5*speed)>>1);
     return 0;
 }
 

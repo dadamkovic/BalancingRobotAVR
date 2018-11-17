@@ -8,7 +8,7 @@
 
 #include "pid.h"
 
-float PID::giveOutput(float input, float target, float dt, uint16_t constrainI=0){
+float PID::giveOutput(float input, float target, float dt, float constrainI){
     float output  = 0;
     float error = input-target;
     error_integral += error;
