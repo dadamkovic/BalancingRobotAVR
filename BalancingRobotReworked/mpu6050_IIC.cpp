@@ -105,7 +105,7 @@ uint8_t IICreadNack(){
  * to return x,y angles from gyro and accelerometer (if returnRaw = 0) or data from MPU (returnRaw = 1)
  */
 
-uint8_t IICReadMPU(float* dataOut,uint8_t returnRaw=0){
+uint8_t IICReadMPU(float* dataOut,uint8_t returnRaw){
     float accX,accY,accZ,tempRaw,gyroX,gyroY,gyroZ;
 
     IICsendStart();
@@ -114,13 +114,6 @@ uint8_t IICReadMPU(float* dataOut,uint8_t returnRaw=0){
     IICsendStart();
     IICsendData(MPUADDRESS_READ);
     uint8_t received[14];
-    /*for(uint8_t i=0;i<6;i++){
-      data[i] = (uint16_t)IICreadAck()<<8;
-      data[i] |= IICreadAck();
-    }
-    data[6] = (uint16_t)IICreadAck()<<8;
-    data[6] |= IICreadNack();
-    IICsendStop();*/
 
     for(uint8_t i=0;i<13;i++)received[i] = IICreadAck();
     received[13] = IICreadNack();
@@ -138,13 +131,13 @@ uint8_t IICReadMPU(float* dataOut,uint8_t returnRaw=0){
     int16_t yAngle = atan2(-data[0], data[2]) * RAD_TO_DEG;*/
 
     if(returnRaw){
-        dataOut[0] = accX;
-        dataOut[1] = accY;
-        dataOut[2] = accZ;
-        dataOut[3] = tempRaw;
-        dataOut[4] = gyroX;
-        dataOut[5] = gyroY;
-        dataOut[6] = gyroZ;
+        dataOut[0] = (float)accX;
+        dataOut[1] = (float)accY;
+        dataOut[2] = (float)accZ;
+        dataOut[3] = (float)tempRaw;
+        dataOut[4] = (float)gyroX;
+        dataOut[5] = (float)gyroY;
+        dataOut[6] = (float)gyroZ;
         return 1;
     }
     else{
@@ -172,19 +165,16 @@ uint8_t IICReadMPU(float* dataOut,uint8_t returnRaw=0){
  *stores the results of average output and returns 0
  */
 
-uint8_t calibarte(int16_t *calibratedValues, uint16_t samples){
-    float bufferAll[7],bufferSum[7];
-    for(int16_t i;i<samples+100;i++){
-        if(i>100){                              //first 100 values discarded
-            IICReadMPU(bufferAll,1);
-            for(uint16_t j;j<7;j++)bufferSum[j]+=bufferAll[j];
+uint8_t calibrate(float* calibratedValues, float samples){
+    float bufferAll[5];
+    long bufferSum[5];
+    for(uint16_t i=0;i<samples;i++){
+            IICReadMPU(bufferAll,0);
+            for(uint8_t j=0;j<5;j++)bufferSum[j]+=bufferAll[j];
             _delay_ms(2);
-        }
     }
-    for(uint8_t i;i<7;i++){
-        bufferAll[i] = bufferAll[i]/samples;
-        calibratedValues[i] = (int16_t)bufferAll[i];
-    }
+    for(uint8_t i=0;i<5;i++)calibratedValues[i] = bufferSum[i]/samples;
+
     return 0;
 }
 

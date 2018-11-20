@@ -27,6 +27,6 @@ uint8_t IICreadAck();
 uint8_t IICreadNack();
 
 uint8_t IICReadMPU(float*,uint8_t);
-uint8_t calibarte(int16_t*, uint16_t);
+uint8_t calibrate(float*, float);
 
 #endif /* MPU6050_IIC_H_ */
