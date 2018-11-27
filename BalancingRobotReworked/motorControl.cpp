@@ -68,7 +68,7 @@ uint8_t MotorDrive::initMotors(){
     TCCR1A &= ~(_BV(WGM11));                // set fast PWM Mode - 8 bit mode
 
     TCCR1B |= _BV(CS11);
-    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 8, f = 7,8kHz
+    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 1
 
 
     *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));

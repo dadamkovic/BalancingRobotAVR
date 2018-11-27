@@ -10,6 +10,8 @@
 #ifndef PID_H_
 #define PID_H_
 #include "inttypes.h"
+#include <avr/io.h>
+#include "uart.h"
 class PID{
     public:
         PID(float proportional, float integrate, float derivative):
@@ -18,7 +20,7 @@ class PID{
         float P = 1;
         float I = 1;
         float D = 1;
-        float Tf = 30;
+        float Tf = 0.6;
         float old_error=0;
         float error_integral = 0;
         float error_derivative = 0;
@@ -26,6 +28,7 @@ class PID{
         void changeP(float);
         void changeI(float);
         void changeD(float);
+        float tunePID(char);
     };
 
 /*

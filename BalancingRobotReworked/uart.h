@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #define U2X 0
-#define BAUD 9600       ///change for different baudrate
+#define BAUD 19200       ///change for different baudrate
 #define USE_INTERRUPT 1
 
 #include <util/setbaud.h>

@@ -141,13 +141,13 @@ uint8_t IICReadMPU(float* dataOut,uint8_t returnRaw){
         return 1;
     }
     else{
-        float xAngle  = atan(accY / sqrt(accX * accX + accZ * accZ)) * RAD_TO_DEG;
-        float yAngle = atan2(-accX, accZ) * RAD_TO_DEG;
-        if(yAngle>90)yAngle = 180 - yAngle;    //MPU6050 is mounted upside down so this needs to correct the angle
-        if(yAngle<-90)yAngle = -180 - yAngle;
-        float xGyro = gyroX / 131.0; // Convert to deg/s
-        float yGyro = gyroY / 131.0;
-        float zGyro = gyroZ / 131.0;
+        float xAngle  = atan(accY / sqrt(accX * accX + accZ * accZ));
+        float yAngle = atan2(-accX, accZ);
+        if(yAngle>1.570795)yAngle = PI - yAngle;    //MPU6050 is mounted upside down so this needs to correct the angle
+        if(yAngle<-1.570795)yAngle = -PI - yAngle;
+        float xGyro = (gyroX / 131.0)* DEG_TO_RAD; // Convert to deg/s
+        float yGyro = (gyroY / 131.0) * DEG_TO_RAD;
+        float zGyro = (gyroZ / 131.0) * DEG_TO_RAD;
         //interfaceSendFloat(gyroY);
         dataOut[0] = xAngle;
         dataOut[1] = yAngle;

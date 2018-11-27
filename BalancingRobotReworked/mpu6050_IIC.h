@@ -17,7 +17,8 @@
 #define MPUADDRESS_WRITE 0b11010000
 #define MPUACCEL_REGISTER 0x3B
 #define RAD_TO_DEG 57.2957
-
+#define DEG_TO_RAD 0.017453
+#define PI 3.14159
 
 void initIIC();
 void IICsendStart();
