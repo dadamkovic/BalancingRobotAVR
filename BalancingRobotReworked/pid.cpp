@@ -39,22 +39,31 @@ float PID::tunePID(char select){
     ADCSRA |= _BV(ADSC); // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);
     ADCval = ADC;
+    float param;
     switch(select){
         case 'P':
         {
-            P = (1.5+ADCval/50.0);
+            P = (ADCval/1000.0);
+            param = P;
             break;
         }
         case 'I':
         {
-            I = (ADCval/10.0);
+            I = (ADCval/1.0);
+            error_integral = 0;
+            param = I;
             break;
         }
         case 'D':
         {
-            D = (0.5+ADCval/1000.0);
+            D = (ADCval/5000.0);
+            param = D;
             break;
         }
     }
-    return ADCval;
+    return param;
+}
+
+void PID::addIntErr(float err){
+    error_integral = err;
 }

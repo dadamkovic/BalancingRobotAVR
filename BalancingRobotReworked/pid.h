@@ -29,6 +29,7 @@ class PID{
         void changeI(float);
         void changeD(float);
         float tunePID(char);
+        void addIntErr(float);
     };
 
 /*

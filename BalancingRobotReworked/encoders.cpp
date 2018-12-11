@@ -12,7 +12,7 @@
 #include "uart.h"
 
 extern MotorDrive motors;
-
+extern float dt;
 
 
 /*GPIO - initialization routines for interrupt handling
@@ -59,10 +59,14 @@ ISR(INT5_vect){
 
 
 ISR(TIMER4_COMPB_vect){
-    motors.speedAB = (motors.encoderAB*0.0168)/0.05;      //374 tickov na 2pi ==> 2pi/374 = 0.0168
+    motors.oldSpeed = (motors.speedAB + motors.speedCD)/2;
+    motors.speedAB = -(motors.encoderAB*0.0168)/0.05;      //374 tickov na 2pi ==> 2pi/374 = 0.0168
     motors.speedCD = (motors.encoderCD*0.0168)/0.05;      //casova konstanta pre meranie je dt = 0.05s
     motors.encoderAB = 0;
     motors.encoderCD = 0;
+    motors.averageSpeed = (motors.speedAB + motors.speedCD)/2;;
+    motors.totalDist += dt*(motors.speedAB+motors.speedCD)*0.017;       //0.017 odvodene z vzdialenost = phi*r pre uhol phi cely
+    motors.motorAccel = (motors.averageSpeed - motors.oldSpeed)/0.05;
     TCNT4 = 0;
 }
 

@@ -31,8 +31,10 @@ class MotorDrive {
         uint8_t SetSpeedB(uint8_t);
         uint8_t initMotors();
 
+        volatile float totalDist = 0;
         volatile float speedAB,speedCD;
         volatile float encoderAB,encoderCD;
+        volatile float oldSpeed,averageSpeed,motorAccel;
 
     private:
         volatile uint8_t *_Motor_A_DDR;

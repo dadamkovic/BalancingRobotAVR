@@ -104,7 +104,7 @@ void MotorDrive::SetSpeedBoth(int8_t speedA){
     }
     else{
         OCR1A = (speedA<<1)+50;          //conversion from 0-100 to 0-255
-        OCR1B = OCR1A;
+        OCR1B = OCR1A+5;
     }
 }
 

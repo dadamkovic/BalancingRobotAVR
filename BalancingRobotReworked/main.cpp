@@ -18,8 +18,8 @@
 #include "motorControl.h"
 #include "timeTracking.h"
 
-#define ANGLE_OFFSET 0.80          //less here means more forward
-#define SPEED_OFFSET 4
+#define ANGLE_OFFSET -0.28          //less here means more forward -0.38
+#define SPEED_OFFSET 2
 #define DEBUG_OUTPUT 1           //set to 0 to disable debugging info
 #define SERVO_OFFSET -8
 
@@ -32,6 +32,7 @@ volatile uint8_t receivingCommandFlag=0;
 static uint16_t counter = 0;
 float MPUData[7];                            //will contain data from MPU
 float calVal[5];
+float dt;
 
 
 
@@ -48,27 +49,39 @@ MotorDrive motors(&DDRC,&DDRC,&PORTC,&PORTC,0,2,4,6);       //motors controlled 
 
 int main(void){
     float accXAngle, gyroXAngle, compXAngle;
-    float accYAngle, gyroYAngle, compYAngle, dt;
+    float accYAngle, gyroYAngle, compYAngle;
     float gyroXChange, gyroYChange, gyroZChange;
     float gyroXDt, gyroYDt;
     float servoAngle=0;
-    float motorSpeed,motorPower;
-    uint16_t ADCval;
+    float desiredAngle,motorPower;
+    float ADCval, filteredSpeed = 0 ;
 
     ADMUX |= _BV(REFS0) | _BV(REFS1);   //2.2 V reference
     ADCSRA |= _BV(ADEN);                //ADC initialized
 
-    DDRH |= _BV(PH4)|_BV(PH5);
-    PORTH |= _BV(PH4) | _BV(PH5);
+    //DDRH |= _BV(PH4)|_BV(PH5);
+    //PORTH |= _BV(PH4) | _BV(PH5);
 
     motors.initMotors();                            //initiates motors
     initInterfaceUART();
     encodersInit();
     initIIC();                                      //initializes TWI interface
     initServo();
-    PID anglePID(10,0,0);                           //initiates PID for motors 2.2,2,2
+
+
+/*
+ *       motorSpeed           compXAngle
+ *          |                     |
+ *          |                     |
+ *
+ * ------------>speedAnglePID----->anglePwmPID
+ */
+    //PID anglePID(13.14,0.14,0.0354);                //initiates PID for anlge 13.14,0.14,0.0354
     PID servoPID(0,1.5,0.2);                        //pid for servos 0,1.5,0.1
-    PID motorPID(0,0,0);                          //2.2,8,0
+
+    PID speedAnglePID(0.5115,0,0);
+    PID anglePwmPID(18.5,0,0.2);        //38,0.24
+    PID accelPwmPID(0,0,0);
     //Calibration vals
     /*float bufferAll[5];
     DDRL |= _BV(PL0);
@@ -123,34 +136,37 @@ int main(void){
         gyroYChange = MPUData[3];
         gyroZChange = MPUData[4];
 
-        //gyroXDt = (gyroXChange + gyroYChange*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ gyroZChange*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
-        gyroXDt = gyroXChange * dt;
+        gyroXDt = (gyroXChange + gyroYChange*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ gyroZChange*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
         gyroYDt = ((gyroYChange*cos(compXAngle)) - gyroZChange*sin(compXAngle))*dt;
         gyroXAngle -= gyroXDt;
         gyroYAngle -= gyroYDt;
 
 
         compXAngle = (0.998 * (compXAngle - gyroXDt) + 0.002 * accXAngle);   //serves for foward-backward orientation
-        compYAngle = (0.95 * (compYAngle + gyroYDt) + 0.05* accYAngle);   //serves for sideways orientation
+        compYAngle = (0.95 * (compYAngle - gyroYDt) + 0.05* accYAngle);   //serves for sideways orientation
 
+        //ADCval = speedAnglePID.tunePID('P');
 
-        ADCval = anglePID.tunePID('I');
-
-        motorSpeed = anglePID.giveOutput(compXAngle*RAD_TO_DEG+ANGLE_OFFSET,0,dt,50);        //calling PID to give us value for motors
-        servoAngle = servoPID.giveOutput(compYAngle,0,dt,18000);
-        motorSpeed = constrain(motorSpeed,-100,100);  //constraining PID output
+        if((counter % 6 )== 0){
+            filteredSpeed = (0.6 * (filteredSpeed) + 0.4* motors.averageSpeed);
+            desiredAngle = speedAnglePID.giveOutput(filteredSpeed,0,dt,0);
+        }
+        desiredAngle = constrain(desiredAngle,-5,5);
+        motorPower= anglePwmPID.giveOutput(compXAngle*RAD_TO_DEG+ANGLE_OFFSET,desiredAngle,dt,0);        //calling PID to give us value for motors
+        //servoAngle = servoPID.giveOutput(compYAngle,0,dt,18000);
+        motorPower = constrain(motorPower,-100,100);  //constraining PID output
         //servoAngle = constrain(servoAngle,-40,40);
         //setServoAngle(-servoAngle+SERVO_OFFSET);
         setServoAngle(SERVO_OFFSET);
 
-        if(motorSpeed>0)motors.SetSpeedBoth((int8_t)motorSpeed+SPEED_OFFSET);
-        else if(motorSpeed<0) motors.SetSpeedBoth((int8_t)motorSpeed-SPEED_OFFSET);                  //setting new speed, offset necessary (motor needs some voltage to move);
-
+        if(motorPower>0)motors.SetSpeedBoth((int8_t)motorPower+SPEED_OFFSET);
+        else if(motorPower<0) motors.SetSpeedBoth((int8_t)motorPower-SPEED_OFFSET);                  //setting new speed, offset necessary (motor needs some voltage to move);
 
 
         _delay_ms(10);
-        if((counter == 501) & (DEBUG_OUTPUT == 1)){
-            interfaceSendString("GyroXAngle was: ");
+
+        if((counter == 201) & (DEBUG_OUTPUT == 1)){
+            /*interfaceSendString("GyroXAngle was: ");
             interfaceSendFloat(gyroXAngle);
             interfaceSendString("\nAccXAngle is: ");
             interfaceSendFloat(accXAngle);
@@ -158,15 +174,15 @@ int main(void){
             interfaceSendFloat(gyroYAngle);
             interfaceSendString("\nAccYAngle is: ");
             interfaceSendFloat(accYAngle);
-            interfaceSendChar('\n');
+            interfaceSendChar('\n');*/
             interfaceSendString("\nCOMPAngle is:");
             interfaceSendFloat(compXAngle);
-            interfaceSendChar('\n');
-            interfaceSendFloat(motors.speedAB);
-            interfaceSendChar('\n');
-            interfaceSendFloat(compXAngle*RAD_TO_DEG);
-            interfaceSendChar('\n');
-            interfaceSendFloat(anglePID.P);
+            //interfaceSendChar('\n');
+            interfaceSendString("\nSpeed is: ");
+            interfaceSendFloat(filteredSpeed);
+            //interfaceSendChar('\n');
+            interfaceSendString("\nP is: ");
+            interfaceSendFloat(ADCval);
             interfaceSendChar('\n');
             interfaceSendChar('\n');
             /*for(uint8_t i =0; i<5;i++){
