@@ -49,8 +49,8 @@ float PID::tunePID(char select){
         }
         case 'I':
         {
-            I = (ADCval/1.0);
-            error_integral = 0;
+            I = (ADCval/100.0);
+            //error_integral = 0;
             param = I;
             break;
         }

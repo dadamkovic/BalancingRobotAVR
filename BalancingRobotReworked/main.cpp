@@ -20,7 +20,7 @@
 
 #define ANGLE_OFFSET -0.28          //less here means more forward -0.38
 #define SPEED_OFFSET 2
-#define DEBUG_OUTPUT 1           //set to 0 to disable debugging info
+#define DEBUG_OUTPUT 0             //set to 0 to disable debugging info
 #define SERVO_OFFSET -8
 
 void encodersInit();                        //didn't include this in any other header file
@@ -32,7 +32,7 @@ volatile uint8_t receivingCommandFlag=0;
 static uint16_t counter = 0;
 float MPUData[7];                            //will contain data from MPU
 float calVal[5];
-float dt;
+float dt,longDt;
 
 
 
@@ -77,9 +77,9 @@ int main(void){
  * ------------>speedAnglePID----->anglePwmPID
  */
     //PID anglePID(13.14,0.14,0.0354);                //initiates PID for anlge 13.14,0.14,0.0354
-    PID servoPID(0,1.5,0.2);                        //pid for servos 0,1.5,0.1
+    PID servoPID(2,0,0);                        //pid for servos 0,1.5,0.1
 
-    PID speedAnglePID(0.5115,0,0);
+    PID speedAnglePID(0.69,0.03,0.02);
     PID anglePwmPID(18.5,0,0.2);        //38,0.24
     PID accelPwmPID(0,0,0);
     //Calibration vals
@@ -118,16 +118,17 @@ int main(void){
     accYAngle = MPUData[1];
     gyroXAngle = MPUData[0];
     gyroYAngle = MPUData[1];
-
+    _delay_ms(1000);
     compYAngle = 0.93 * (compYAngle + gyroYAngle) + 0.07 * accYAngle;   //serves for sideways orientation
     compXAngle = 0.98 * (compXAngle + gyroXAngle) + 0.02 * accXAngle;   //serves for foward-backward orientation
     clockReset();
-    setServoAngle(SERVO_OFFSET);
+    //setServoAngle(SERVO_OFFSET);
     while(1){
 
         IICReadMPU(MPUData,0);
 
         dt = clockTime();
+        longDt += dt;
         clockReset();
 
         accXAngle = MPUData[0];
@@ -145,18 +146,19 @@ int main(void){
         compXAngle = (0.998 * (compXAngle - gyroXDt) + 0.002 * accXAngle);   //serves for foward-backward orientation
         compYAngle = (0.95 * (compYAngle - gyroYDt) + 0.05* accYAngle);   //serves for sideways orientation
 
-        //ADCval = speedAnglePID.tunePID('P');
+        //ADCval = servoPID.tunePID('P');
 
         if((counter % 6 )== 0){
             filteredSpeed = (0.6 * (filteredSpeed) + 0.4* motors.averageSpeed);
-            desiredAngle = speedAnglePID.giveOutput(filteredSpeed,0,dt,0);
+            desiredAngle = speedAnglePID.giveOutput(filteredSpeed,0,longDt,500);
+            longDt = 0;
         }
-        desiredAngle = constrain(desiredAngle,-5,5);
+        desiredAngle = constrain(desiredAngle,-10,10);
         motorPower= anglePwmPID.giveOutput(compXAngle*RAD_TO_DEG+ANGLE_OFFSET,desiredAngle,dt,0);        //calling PID to give us value for motors
         //servoAngle = servoPID.giveOutput(compYAngle,0,dt,18000);
         motorPower = constrain(motorPower,-100,100);  //constraining PID output
-        //servoAngle = constrain(servoAngle,-40,40);
-        //setServoAngle(-servoAngle+SERVO_OFFSET);
+        //servoAngle = constrain(servoAngle,-20,20);
+        //setServoAngle(servoAngle*RAD_TO_DEG+SERVO_OFFSET);
         setServoAngle(SERVO_OFFSET);
 
         if(motorPower>0)motors.SetSpeedBoth((int8_t)motorPower+SPEED_OFFSET);
