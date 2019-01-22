@@ -1,58 +1,63 @@
-/*
- * MotorControl.h
- *
- * Created: 18.7.2018 13:17:43
- *  Author: Asus
- * Motor ENABLE1,ENABLE2 pins are connected to PD5,PD6 respectively the rest are free for the user to chose
+/**
+ * \file motorControl.h
+ * \author Daniel Adamkovic
+ * \date 22/1/2019
+ * \brief Declaration of the MotorControl class.
  */
-
 
 #ifndef MOTORCONTROL_H_
 #define MOTORCONTROL_H_
 
 #include <avr/io.h>
 
-class MotorDrive {
-    public:
-        float Motor_SPEED[2];
+/**
+ * \brief Tuned to acomodate for the differences between controlled motors.
+ */
+#define MOTOR_A_SPEED_OFFSET 5
+#define MOTOR_B_SPEED_OFFSET 0
 
-        MotorDrive(
-                volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
-                uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2)
-        : _Motor_A_DDR(a_ddr),_Motor_B_DDR(b_ddr), _Motor_A_PORT(a_port), _Motor_B_PORT(b_port), _Motor_A_PIN_1(a_pin_1), _Motor_A_PIN_2(a_pin_2),
-        _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {}
-        ~MotorDrive(){
+/**
+ * \brief Class controlling and monitoring two motors through an interface of H-bridge and encoder outputs.
+ *
+ * Aside from methods that handle interaction with the H-bridge, class also includes state variables. These are used to keep track
+ * of properties like motor speed, total traveled distance, ...
+ *
+ * \note User is free to chose which pins will be connected to which motor inputs, but EN pins have to be connected to PD5, PD6.
+ */
+class MotorControl {
+    public:
+
+
+        MotorControl();
+        MotorControl(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
+                        uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2);
+        ~MotorControl(){
         }
 
 
-        uint8_t SetDIR(int8_t, char);
         void SetSpeedBoth(int8_t);
-        uint8_t SetSpeedA(uint8_t);
-        uint8_t SetSpeedB(uint8_t);
+        uint8_t SetSpeedA(int8_t);
+        uint8_t SetSpeedB(int8_t);
         uint8_t initMotors();
 
-        volatile float totalDist = 0;
-        volatile float speedAB,speedCD;
-        volatile float encoderAB,encoderCD;
-        volatile float oldSpeed,averageSpeed,motorAccel;
+        volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
+        volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
+        volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges
+        volatile float oldSpeed = 0;            ///< Necessary to know previous speed to implement filter
+        volatile float averageSpeed = 0;        ///< Average speed of both wheels
 
     private:
-        volatile uint8_t *_Motor_A_DDR;
-        volatile uint8_t *_Motor_B_DDR;
-        volatile uint8_t *_Motor_A_PORT;
-        volatile uint8_t *_Motor_B_PORT;
-        uint8_t _Motor_A_PIN_1;
-        uint8_t _Motor_A_PIN_2;
-        uint8_t _Motor_B_PIN_1;
-        uint8_t _Motor_B_PIN_2;
+        uint8_t SetDIR(int8_t, char);
+        inline uint8_t AddOffset(uint8_t, int8_t);
+        volatile uint8_t *_Motor_A_DDR;         ///< Holds the address of the DDRx register for both, IN inputs of a H-bridge A
+        volatile uint8_t *_Motor_B_DDR;         ///< Holds the address of the DDRx register for both, IN inputs of a H-bridge B
+        volatile uint8_t *_Motor_A_PORT;        ///< Holds the address of the PORTx register for both, IN inputs of a H-bridge A
+        volatile uint8_t *_Motor_B_PORT;        ///< Holds the address of the PORTx register for both, IN inputs of a H-bridge B
+        uint8_t _Motor_A_PIN_1;                 ///< Pin number of the IN1 input of H-bridge A
+        uint8_t _Motor_A_PIN_2;                 ///< Pin number of the IN2 input of H-bridge A
+        uint8_t _Motor_B_PIN_1;                 ///< Pin number of the IN1 input of H-bridge B
+        uint8_t _Motor_B_PIN_2;                 ///< Pin number of the IN2 input of H-bridge B
 
 
 };
-
-
-
-
-
-
-
 #endif /* MOTORCONTROL_H_ */

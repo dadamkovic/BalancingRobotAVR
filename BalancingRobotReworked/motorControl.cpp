@@ -1,8 +1,9 @@
-/*
- * motorControl.cpp
+/**
+ * \file motorControl.cpp
+ * \author Daniel Adamkovic
+ * \date 22/1/2019
  *
- *  Created on: Aug 24, 2018
- *      Author: daniel
+ * \brief Definition of methods used by MotorControl class.
  */
 
 
@@ -10,12 +11,71 @@
 
 
 
-/*
-*INPUT : direction of motor (<0 BACK, >0 FORWARD), char (A, B) selects which motor to control
-*FUNCTION : sets PINS based on the desired direction of spin
-*OUTPUT : 0
-*/
-uint8_t MotorDrive::SetDIR(int8_t dir, char motor){
+/**
+ * \brief Constructor of the MotorControl class
+ *
+ * \param[in] a_ddr Address of the DDRx register to which H-bridge A inputs are connected.
+ * \param[in] b_ddr Address of the DDRx register to which H-bridge B inputs are connected.
+ * \param[in] a_port Address of the PORTx register to which H-bridge A inputs are connected.
+ * \param[in] b_port Address of the PORTx register to which H-bridge B inputs are connected.
+ * \param[in] a_pin_1 Number of the pin to which the H-bridge's A IN1 input is connected.
+ * \param[in] a_pin_2 Number of the pin to which the H-bridge's A IN2 input is connected.
+ * \param[in] b_pin_1 Number of the pin to which the H-bridge's B IN1 input is connected.
+ * \param[in] b_pin_2 Number of the pin to which the H-bridge's B IN2 input is connected.
+ *
+ * User can choose how to wire the H-bridge to the Arduino Mega board, but the choice is not completely arbitrary.
+ * User has to wire both inputs IN1/IN2 of a given H-bridge to the Arduino pins that are controlled by the same DDRx register.
+ * EN input has to be wired to PD5 for H-bridge A and PD6 for H-bridge B.
+ * The class is able to control practically any DC motors connected to an H-bridge
+ * which interface consists of IN1/IN2 inputs for direction control and EN input for enabling power to motor.
+ * EN pin to
+ */
+MotorControl::MotorControl(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
+                           uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2)
+        : _Motor_A_DDR(a_ddr),_Motor_B_DDR(b_ddr), _Motor_A_PORT(a_port), _Motor_B_PORT(b_port), _Motor_A_PIN_1(a_pin_1), _Motor_A_PIN_2(a_pin_2),\
+          _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {}
+
+/**
+ * \brief Initializes motors, only called <b> once </b> in a program run.
+ * \return 0
+ *
+ * The method initializes Timer 1 into non-inverting fast PWM mode and sets the corresponding
+ * pins to be outputs changing based on Timer 1 control registers setup.
+ */
+uint8_t MotorControl::initMotors(){
+
+    DDRB |= (_BV(PB6) | _BV(PB5)) ;             // PD6, PD5 is output
+    OCR1A = 0;                                  //motors initialized to 0V - shutdown
+    OCR1B = 0;
+
+    TCCR1A |= _BV(COM1A1);
+    TCCR1A &= ~_BV(COM1A0);                 // set none-inverting mode channel A
+    TCCR1A |= _BV(COM1B1);
+    TCCR1A &= ~_BV(COM1B0);                 // set none-inverting mode channel B
+
+    TCCR1A |= _BV(WGM10);
+    TCCR1B |= _BV(WGM12);
+    TCCR1A &= ~(_BV(WGM11));                // set fast PWM Mode - 8 bit mode
+
+    TCCR1B |= _BV(CS11);
+    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 1
+
+
+    *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));
+    *_Motor_B_DDR |= (_BV(_Motor_B_PIN_1)|(_BV(_Motor_B_PIN_2)));
+    SetDIR(1,'A');                              //both motors forward
+    SetDIR(1,'B');
+
+    return 0;
+}
+
+/**
+ * brief Sets the direction of motor turning.
+ * \param[in] dir Any positive or negative value, depending on the desired direction (only sign matters).
+ * \param[in] motor Either character 'A' or 'B' depending on which motor the user wants to control.
+ * \return 0
+ */
+uint8_t MotorControl::SetDIR(int8_t dir, char motor){
     volatile uint8_t *motor_port;
     uint8_t ctrlx1;
     uint8_t ctrlx0;
@@ -47,94 +107,98 @@ uint8_t MotorDrive::SetDIR(int8_t dir, char motor){
    return 0;
 }
 
-/*
-*INPUT : void
-*FUNCTION : initializes timer0A for fast PWM on pins PB5, PB6
-*OUTPUT : 0
-*/
-uint8_t MotorDrive::initMotors(){
-
-    DDRB |= (_BV(PB6) | _BV(PB5)) ;         // PD6, PD5 is now an output
-    OCR1A = 0;                                  //motors initialized to 0V - shutdown
-    OCR1B = 0;
-
-    TCCR1A |= _BV(COM1A1);
-    TCCR1A &= ~_BV(COM1A0);                 // set none-inverting mode channel A
-    TCCR1A |= _BV(COM1B1);
-    TCCR1A &= ~_BV(COM1B0);                 // set none-inverting mode channel B
-
-    TCCR1A |= _BV(WGM10);
-    TCCR1B |= _BV(WGM12);
-    TCCR1A &= ~(_BV(WGM11));                // set fast PWM Mode - 8 bit mode
-
-    TCCR1B |= _BV(CS11);
-    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 1
 
 
-    *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));
-    *_Motor_B_DDR |= (_BV(_Motor_B_PIN_1)|(_BV(_Motor_B_PIN_2)));
-    SetDIR(1,'A');                              //both motors forward
-    SetDIR(1,'B');
-
-    return 0;
-}
 
 
-/*
-*INPUT : 2 X speed of motor in percents (0 - 100)
-*FUNCTION : sets the speed in timer compare registers
-*OUTPUT : none
-*/
-void MotorDrive::SetSpeedBoth(int8_t speedA){
-    if(speedA>0){
+/**
+ * \brief Sets the speed of both motors at once, to the same level.
+ * \param[in] motorSpeed Value from -100 to 100, where 0 is shutdown and 100 full speed (direction depends on sign).
+ * \return void
+ */
+void MotorControl::SetSpeedBoth(int8_t motorSpeed){
+    if(motorSpeed>0){
          SetDIR(1,'A');
          SetDIR(1,'B');
-      }
-      else{
+    }
+    else{
          SetDIR(-1,'A');
          SetDIR(-1,'B');
-         speedA = speedA*-1;
-      }
+         motorSpeed = motorSpeed*-1;
+    }
 
-
-    //loop_until_bit_is_set(TIFR0,TOV0);
-    if(speedA > 100){
+    if(motorSpeed >= 100){
         OCR1A = 255;
         OCR1B = 255;
     }
     else{
-        OCR1A = (speedA<<1)+50;          //conversion from 0-100 to 0-255
-        OCR1B = OCR1A+5;
+        uint8_t setSpeed = (motorSpeed*2)+50;   //conversion from 0-100 to 0-255
+        OCR1A = AddOffset(setSpeed,MOTOR_A_SPEED_OFFSET);
+        OCR1B = AddOffset(setSpeed,MOTOR_B_SPEED_OFFSET);
     }
 }
 
 
-//TODO: maybe rework these functions bellow
-/*
-*INPUT : speed of motor in percents (0 - 100)
-*FUNCTION : sets the speed in timer compare register for A motor
-*OUTPUT : 0
-*/
-uint8_t MotorDrive::SetSpeedA(uint8_t speed){
-  loop_until_bit_is_set(TIFR1,TOV1);
-    if(speed > 100)OCR1A = 255;
-    else OCR1A = ((5*speed)>>1);
+/**
+ * \brief Sets the speed and direction of motor A.
+ * \param[in] speedA Value from -100 to 100.
+ * \see SetSpeedBoth
+ * \see SetSpeedB
+ * \todo Maybe transform that overflow/underflow expression into function
+ */
+uint8_t MotorControl::SetSpeedA(int8_t speedA){
+    if(speedA<0){
+        SetDIR(-1,'A');
+        speedA *= -1;
+    }
+    else SetDIR(1,'A');
+    if(speedA >= 100){
+        OCR1A = 255;
+        return 1;
+    }
+    uint8_t setSpeed = (speedA*2)+50;
+    OCR1A = AddOffset(setSpeed,MOTOR_A_SPEED_OFFSET);
     return 0;
 }
 
-/*
-*INPUT : speed of motor in percents (0 - 100)
-*FUNCTION : sets the speed in timer compare register for B motor
-*OUTPUT : 0
-*/
-uint8_t MotorDrive::SetSpeedB(uint8_t speed){
-  loop_until_bit_is_set(TIFR1,TOV1);
-    if(speed > 100)OCR1B = 255;
-    else OCR1B = ((5*speed)>>1);
+/**
+ * \brief Sets the speed and direction of motor A.
+ * \param[in] speedB Value from -100 to 100.
+ * \see SetSpeedBoth
+ * \see SetSpeedA
+ */
+uint8_t MotorControl::SetSpeedB(int8_t speedB){
+    if(speedB<0){
+        SetDIR(-1,'B');
+        speedB *= -1;
+    }
+    else SetDIR(1,'B');
+
+    if(speedB >= 100){
+        OCR1B = 255;
+        return 1;
+    }
+    uint8_t setSpeed = (speedB*2)+50;
+    OCR1B = AddOffset(setSpeed,MOTOR_B_SPEED_OFFSET);
     return 0;
 }
 
 
+/**
+ * \brief Private helper function, that makes sure adding offset deosn't cause overflow or underflow.
+ * \param[in] value Value that we want to add offset to.
+ * \param[in] offset Offset we wish to add.
+ * \return Value with offset correctly added.
+ *
+ * Without this function we could end up causing overflow or underflow. E.g.:If we were trying to add offset of 10
+ * to value 250 we would end up with result 5, which is obviously wrong. In this case the function would return the result
+ * of 255 which is the highest number we could possibly represent.
+ */
+inline uint8_t MotorControl::AddOffset(uint8_t value, int8_t offset){
+    if((value+offset<offset)&(offset>0))return 255;
+    else if((value+offset>(255+offset))&(offset<0))return 0;
+    else return (value+offset);
+}
 
 
 

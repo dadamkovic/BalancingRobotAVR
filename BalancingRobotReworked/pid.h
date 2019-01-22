@@ -28,7 +28,7 @@ class PID{
         void changeP(float);
         void changeI(float);
         void changeD(float);
-        float tunePID(char);
+        float tunePID(char, float);
         void addIntErr(float);
     };
 
@@ -37,7 +37,7 @@ class PID{
  * OUTPUT :
  */
 
-static float constrain(float x, float minValue, float maxValue){
+static inline float constrain(float x, float minValue, float maxValue){
     if(x < minValue)return minValue;
     else if(x > maxValue)return maxValue;
     else return x;

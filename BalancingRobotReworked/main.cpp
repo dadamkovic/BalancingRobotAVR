@@ -34,11 +34,7 @@ float MPUData[7];                            //will contain data from MPU
 float calVal[5];
 float dt,longDt;
 
-
-
-//testing branching
-
-MotorDrive motors(&DDRC,&DDRC,&PORTC,&PORTC,0,2,4,6);       //motors controlled by PB1,PB2,PB3,PB4
+MotorControl motors(&DDRC,&DDRC,&PORTC,&PORTC,0,2,4,6);       //motors controlled by PB1,PB2,PB3,PB4
 
 
 
@@ -56,8 +52,7 @@ int main(void){
     float desiredAngle,motorPower;
     float ADCval, filteredSpeed = 0 ;
 
-    ADMUX |= _BV(REFS0) | _BV(REFS1);   //2.2 V reference
-    ADCSRA |= _BV(ADEN);                //ADC initialized
+
 
     //DDRH |= _BV(PH4)|_BV(PH5);
     //PORTH |= _BV(PH4) | _BV(PH5);
