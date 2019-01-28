@@ -92,6 +92,7 @@ Date        Description
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 /*
 ** constants and macros
 */
@@ -219,8 +220,14 @@ extern void uart_puti(int16_t);
  *  @param   none
  *  @return  bytes waiting in the receive buffer
  */
+
+
 extern int uart_available(void);
 
+/**
+ * @brief    Macro to send a float number a string constant into program memory
+ */
+extern void uart_putf(float);
 /**
  *  @brief   Flush bytes waiting in receive buffer
  *  @param   none

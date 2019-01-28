@@ -51,6 +51,18 @@
                                 								
                                 <option id="de.innot.avreclipse.assembler.option.debug.level.1116293008" name="Generate Debugging Info" superClass="de.innot.avreclipse.assembler.option.debug.level" useByScannerDiscovery="false"/>
                                 								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="de.innot.avreclipse.asm.option.include.paths.556679498" name="#include paths for preprocessor(-I)" superClass="de.innot.avreclipse.asm.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="/home/daniel/avr-workspace/BalancingRobotReworked/inc"/>
+                                    								
+                                </option>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="de.innot.avreclipse.asm.option.include.gaspaths.759338658" name=".include paths for assembler(-Wa,-I)" superClass="de.innot.avreclipse.asm.option.include.gaspaths" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="/home/daniel/avr-workspace/BalancingRobotReworked/inc"/>
+                                    								
+                                </option>
+                                								
                                 <inputType id="de.innot.avreclipse.tool.assembler.input.479362405" superClass="de.innot.avreclipse.tool.assembler.input"/>
                                 							
                             </tool>
@@ -61,6 +73,12 @@
                                 								
                                 <option id="de.innot.avreclipse.compiler.option.optimize.561139442" name="Optimization Level" superClass="de.innot.avreclipse.compiler.option.optimize" useByScannerDiscovery="false" value="de.innot.avreclipse.compiler.optimize.size" valueType="enumerated"/>
                                 								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="de.innot.avreclipse.compiler.option.incpath.1874757480" name="Include Paths (-I)" superClass="de.innot.avreclipse.compiler.option.incpath" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="/home/daniel/avr-workspace/BalancingRobotReworked/inc"/>
+                                    								
+                                </option>
+                                								
                                 <inputType id="de.innot.avreclipse.compiler.winavr.input.362841642" name="C Source Files" superClass="de.innot.avreclipse.compiler.winavr.input"/>
                                 							
                             </tool>
@@ -70,6 +88,12 @@
                                 <option id="de.innot.avreclipse.cppcompiler.option.debug.level.667423347" name="Generate Debugging Info" superClass="de.innot.avreclipse.cppcompiler.option.debug.level" useByScannerDiscovery="false"/>
                                 								
                                 <option id="de.innot.avreclipse.cppcompiler.option.optimize.422890890" name="Optimization Level" superClass="de.innot.avreclipse.cppcompiler.option.optimize" useByScannerDiscovery="false" value="de.innot.avreclipse.cppcompiler.optimize.size" valueType="enumerated"/>
+                                								
+                                <option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="de.innot.avreclipse.cppcompiler.option.incpath.717437304" name="Include Paths (-I)" superClass="de.innot.avreclipse.cppcompiler.option.incpath" useByScannerDiscovery="false" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="/home/daniel/avr-workspace/BalancingRobotReworked/inc"/>
+                                    								
+                                </option>
                                 								
                                 <inputType id="de.innot.avreclipse.cppcompiler.input.1426595907" superClass="de.innot.avreclipse.cppcompiler.input"/>
                                 							
@@ -104,6 +128,18 @@
                         </toolChain>
                         					
                     </folderInfo>
+                    					
+                    <fileInfo id="de.innot.avreclipse.configuration.app.debug.858111720.601468010" name="uart.cpp" rcbsApplicability="disable" resourcePath="src/uart.cpp" toolsToInvoke="de.innot.avreclipse.tool.cppcompiler.app.debug.1195416664.291203916">
+                        						
+                        <tool id="de.innot.avreclipse.tool.cppcompiler.app.debug.1195416664.291203916" name="AVR C++ Compiler" superClass="de.innot.avreclipse.tool.cppcompiler.app.debug.1195416664"/>
+                        					
+                    </fileInfo>
+                    					
+                    <sourceEntries>
+                        						
+                        <entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        					
+                    </sourceEntries>
                     				
                 </configuration>
                 			
@@ -214,6 +250,12 @@
                         </toolChain>
                         					
                     </folderInfo>
+                    					
+                    <sourceEntries>
+                        						
+                        <entry excluding="src/uart.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+                        					
+                    </sourceEntries>
                     				
                 </configuration>
                 			
@@ -265,6 +307,20 @@
         	
     </storageModule>
     	
-    <storageModule moduleId="refreshScope"/>
+    <storageModule moduleId="refreshScope" versionNumber="2">
+        		
+        <configuration configurationName="Debug">
+            			
+            <resource resourceType="PROJECT" workspacePath="/BalancingRobotReworked"/>
+            		
+        </configuration>
+        		
+        <configuration configurationName="Release">
+            			
+            <resource resourceType="PROJECT" workspacePath="/BalancingRobotReworked"/>
+            		
+        </configuration>
+        	
+    </storageModule>
     
 </cproject>

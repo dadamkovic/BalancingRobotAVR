@@ -572,6 +572,15 @@ void uart_puti(int16_t number)
     uart_puts(buffer);
 }
 
+
+
+void uart_putf(float number){
+    char buffer[20];
+    //sprintf(buffer, "%f", number);
+    //snprintf(buffer, sizeof buffer, "%.2f", number);
+    dtostrf(number,4,2,buffer);
+    uart_puts(buffer);
+}
 /*************************************************************************
 Function: uart_puts()
 Purpose:  transmit string to UART
