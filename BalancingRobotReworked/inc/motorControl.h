@@ -17,7 +17,7 @@ uint8_t setServoAngle(float);
  * \brief Tuned to acomodate for the differences between controlled motors.
  */
 #define MOTOR_A_SPEED_OFFSET 0
-#define MOTOR_B_SPEED_OFFSET 12
+#define MOTOR_B_SPEED_OFFSET 18
 
 /**
  * \brief Class controlling and monitoring two motors through an interface of H-bridge and encoder outputs.
@@ -37,13 +37,16 @@ class MotorControl {
 
         ~MotorControl(){
         }
-
+        void initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
+                                   uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2);
 
         void SetSpeedBoth(int8_t);
-        uint8_t SetSpeedA(int8_t);
-        uint8_t SetSpeedB(int8_t);
+        void setSpeedIndividually(int8_t);
         uint8_t initMotors();
+        uint8_t getBatteryLvl();
 
+        float desiredSpeed = 0;
+        int8_t motorASpeedOffset,motorBSpeedOffset=0;
         volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
         volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
         volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges

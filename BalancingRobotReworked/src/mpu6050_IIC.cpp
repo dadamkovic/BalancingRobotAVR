@@ -113,6 +113,30 @@ uint8_t IICreadNack(){
     return TWDR;
 }
 
+MPU::MPU(){
+    initIIC();
+    _delay_ms(1000);
+    IICReadMPU(NO_RAW);
+    compYAngle = MPUData[1];
+    compXAngle = MPUData[0];
+};
+
+void MPU::updateValues(float dt){
+    IICReadMPU(NO_RAW);
+    gyroXDt = giveGyroAngle(dt, 'X');
+    gyroYDt = giveGyroAngle(dt, 'Y');
+    gyroXAngle += gyroXDt;
+    gyroYAngle += gyroYDt;
+
+    compXAngle = (0.98 * (compXAngle + gyroXDt) + 0.02 * ACC_X_ANGLE);   //serves for foward-backward orientation
+    compYAngle = (0.98 * (compYAngle + gyroYDt) + 0.02 * ACC_Y_ANGLE);      //serves for sideways orientation
+}
+
+float MPU::giveGyroAngle(float dt, char c){
+    if(c=='X')return -(GYRO_X_CHANGE + GYRO_Y_CHANGE*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ GYRO_Z_CHANGE*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
+    else if(c=='Y')return -((GYRO_Y_CHANGE*cos(compXAngle)) - GYRO_Z_CHANGE*sin(compXAngle))*dt;
+    return 0;
+}
 /**
  * \brief Queries MPU6050 for data and processes it.
  * \param[in] returnRaw If set to 'R' or 'r', function returns data from MPU6050, without processing it.
@@ -123,7 +147,7 @@ uint8_t IICreadNack(){
  * or performs computations and sets yaw, pitch from accelerometer and angle accelerations from gyroscope.
  */
 
-uint8_t IICReadMPU(float *dataOut,uint8_t returnRaw){
+uint8_t MPU::IICReadMPU(uint8_t returnRaw){
     float accX,accY,accZ,tempRaw,gyroX,gyroY,gyroZ;
     IICsendStart();
     IICsendData(MPUADDRESS_WRITE);
@@ -148,13 +172,13 @@ uint8_t IICReadMPU(float *dataOut,uint8_t returnRaw){
 
 
     if(returnRaw){
-        dataOut[0] = (float)accX;
-        dataOut[1] = (float)accY;
-        dataOut[2] = (float)accZ;
-        dataOut[3] = (float)tempRaw;
-        dataOut[4] = (float)gyroX;
-        dataOut[5] = (float)gyroY;
-        dataOut[6] = (float)gyroZ;
+        MPUData[0] = (float)accX;
+        MPUData[1] = (float)accY;
+        MPUData[2] = (float)accZ;
+        MPUData[3] = (float)tempRaw;
+        MPUData[4] = (float)gyroX;
+        MPUData[5] = (float)gyroY;
+        MPUData[6] = (float)gyroZ;
         return 1;
     }
     else{
@@ -167,11 +191,11 @@ uint8_t IICReadMPU(float *dataOut,uint8_t returnRaw){
         float xGyro = (gyroX / GYRO_CONSTANT) * DEG_TO_RAD;
         float yGyro = (gyroY / GYRO_CONSTANT) * DEG_TO_RAD;
         float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
-        dataOut[0] = xAngle;
-        dataOut[1] = yAngle;
-        dataOut[2] = xGyro;
-        dataOut[3] = yGyro;
-        dataOut[4] = zGyro;
+        MPUData[0] = xAngle;
+        MPUData[1] = yAngle;
+        MPUData[2] = xGyro;
+        MPUData[3] = yGyro;
+        MPUData[4] = zGyro;
         //BUZZER_OFF;
         //uart_puti((uint16_t)((received[0] << 8) | received[1]));
         //uart_putc('\n');
@@ -190,7 +214,7 @@ uint8_t calibrate(float *calibratedValues, uint16_t samples = 1000){
     float bufferAll[5];
     float bufferSum[5];
     for(uint16_t i=0;i<samples;i++){
-            IICReadMPU(bufferAll,0);
+            //IICReadMPU(bufferAll,0);
             for(uint8_t j=0;j<5;j++)bufferSum[j]+=bufferAll[j];
             _delay_ms(2);
     }

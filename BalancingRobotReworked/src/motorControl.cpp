@@ -35,6 +35,20 @@ MotorControl::MotorControl(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, vola
         : _Motor_A_DDR(a_ddr),_Motor_B_DDR(b_ddr), _Motor_A_PORT(a_port), _Motor_B_PORT(b_port), _Motor_A_PIN_1(a_pin_1), _Motor_A_PIN_2(a_pin_2),\
           _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {}
 
+
+void MotorControl::initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
+                           uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2){
+    _Motor_A_DDR = a_ddr;
+    _Motor_B_DDR = b_ddr;
+    _Motor_A_PORT = a_port;
+    _Motor_B_PORT = b_port;
+    _Motor_A_PIN_1 = a_pin_1;
+    _Motor_A_PIN_2 = a_pin_2;
+    _Motor_B_PIN_1 = b_pin_1;
+    _Motor_B_PIN_2 = b_pin_2;
+};
+
+
 /**
  * \brief Initializes motors, only called <b> once </b> in a program run.
  * \return 0
@@ -141,48 +155,39 @@ void MotorControl::SetSpeedBoth(int8_t motorSpeed){
 }
 
 
-/**
- * \brief Sets the speed and direction of motor A.
- * \param[in] speedA Value from -100 to 100.
- * \see SetSpeedBoth
- * \see SetSpeedB
- * \todo Maybe transform that overflow/underflow expression into function
- */
-uint8_t MotorControl::SetSpeedA(int8_t speedA){
-    if(speedA<0){
-        SetDIR(-1,'A');
-        speedA *= -1;
-    }
-    else SetDIR(1,'A');
-    if(speedA >= 100){
-        OCR1A = 255;
-        return 1;
-    }
-    uint8_t setSpeed = (speedA*2)+55;
-    OCR1A = AddOffset(setSpeed,MOTOR_A_SPEED_OFFSET);
-    return 0;
-}
+void MotorControl::setSpeedIndividually(int8_t motorSpeed){
+    int8_t motorSpeedA = motorSpeed+(motorASpeedOffset*40);
+    int8_t motorSpeedB = motorSpeed+(motorBSpeedOffset*40);
 
-/**
- * \brief Sets the speed and direction of motor A.
- * \param[in] speedB Value from -100 to 100.
- * \see SetSpeedBoth
- * \see SetSpeedA
- */
-uint8_t MotorControl::SetSpeedB(int8_t speedB){
-    if(speedB<0){
+    if(motorSpeedA>0){
+         SetDIR(1,'A');
+    }
+    else{
+         SetDIR(-1,'A');
+         motorSpeedA = motorSpeedA*-1;
+    }
+    if(motorSpeedB>0){
+        SetDIR(1,'B');
+       }
+   else{
         SetDIR(-1,'B');
-        speedB *= -1;
-    }
-    else SetDIR(1,'B');
+        motorSpeedB = motorSpeedB*-1;
+   }
 
-    if(speedB >= 100){
-        OCR1B = 255;
-        return 1;
+    if(motorSpeedA >= 100){
+        OCR1A = 255;
     }
-    uint8_t setSpeed = (speedB*2)+50;
-    OCR1B = AddOffset(setSpeed,MOTOR_B_SPEED_OFFSET);
-    return 0;
+    if(motorSpeedB >= 100){
+        OCR1B = 255;
+    }
+    else{
+        uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
+        uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
+        OCR1A = AddOffset(setSpeedA,MOTOR_A_SPEED_OFFSET);
+        OCR1B = AddOffset(setSpeedB,MOTOR_B_SPEED_OFFSET);
+        //OCR1A = setSpeed;
+        //OCR1B = setSpeed;
+    }
 }
 
 
@@ -200,6 +205,17 @@ uint8_t MotorControl::AddOffset(uint8_t value, int8_t offset){
     if(((value+offset)<offset)&&(offset>0))return 255;
     else if(((value+offset)>(255+offset))&&(offset<0))return 0;
     else return (value+offset);
+}
+
+uint8_t MotorControl::getBatteryLvl(){
+    ADMUX |= _BV(REFS0);
+    ADMUX &= ~(_BV(REFS1));                                             //5V reference
+    ADMUX &= ~(_BV(MUX0)|_BV(MUX1)|_BV(MUX2)|_BV(MUX3)|_BV(MUX4));      //Channel ADC0
+    ADCSRA |= _BV(ADEN);                                                //ADC initialized
+    ADCSRA |= _BV(ADSC);                                                // starts first conversion
+    loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
+    uint16_t ADCval = ADC;
+    return (uint8_t)((ADCval*100.0)/65535.0);
 }
 
 
