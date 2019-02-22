@@ -8,6 +8,7 @@
 
 
 #include "motorControl.h"
+#include "utility.h"
 
 
 
@@ -109,7 +110,7 @@ uint8_t MotorControl::SetDIR(int8_t dir, char motor){
                 break;
     }
 
-    if(dir<0){
+    if(dir>0){
         *motor_port &= ~(1 << ctrlx0);
         *motor_port |= (1 << ctrlx1);
     }
@@ -156,8 +157,8 @@ void MotorControl::SetSpeedBoth(int8_t motorSpeed){
 
 
 void MotorControl::setSpeedIndividually(int8_t motorSpeed){
-    int8_t motorSpeedA = motorSpeed+(motorASpeedOffset*40);
-    int8_t motorSpeedB = motorSpeed+(motorBSpeedOffset*40);
+    int8_t motorSpeedA = motorSpeed + motorASpeedOffset;
+    int8_t motorSpeedB = motorSpeed + motorBSpeedOffset;
 
     if(motorSpeedA>0){
          SetDIR(1,'A');
@@ -215,7 +216,8 @@ uint8_t MotorControl::getBatteryLvl(){
     ADCSRA |= _BV(ADSC);                                                // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
     uint16_t ADCval = ADC;
-    return (uint8_t)((ADCval*100.0)/65535.0);
+    return (uint8_t) map(((ADCval*5.0)/1024.0),3.7,4.08,0,100);
+    //return (float) (ADCval);
 }
 
 

@@ -55,8 +55,8 @@ extern MotorControl motors;
  * interval in which the data from encoders is processed.
  */
 void encodersInit(){
-    DDRA &= ~(_BV(PA0) | _BV(PA2));             //pins as inputs
-    DDRE &= ~(_BV(PE4)| _BV(PE5));
+    DDRA &= ~(_BV(PA0) | _BV(PE5));             //pins as inputs
+    DDRE &= ~(_BV(PE4)| _BV(PA2));
 
     EICRB |= (_BV(ISC40) | _BV(ISC41));         //PE4 as interrupt on rising edge
     EICRB |= (_BV(ISC50) | _BV(ISC51));         //PE5 as interrupt on rising edge
@@ -71,15 +71,15 @@ void encodersInit(){
  * \see encodersInit
  */
 ISR(INT4_vect){
-    if( PINA & _BV(PA0))motors.encoderAB++;
-    else motors.encoderAB--;
+    if( PINA & _BV(PA2))motors.encoderAB--;
+    else motors.encoderAB++;
 };
 
 /**
  * \see encodersInit
  */
 ISR(INT5_vect){
-    if(PINA & _BV(PA2))motors.encoderCD++;
+    if(PINA & _BV(PA0))motors.encoderCD++;
     else motors.encoderCD--;
 }
 

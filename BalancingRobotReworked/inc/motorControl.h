@@ -16,8 +16,8 @@ uint8_t setServoAngle(float);
 /**
  * \brief Tuned to acomodate for the differences between controlled motors.
  */
-#define MOTOR_A_SPEED_OFFSET 0
-#define MOTOR_B_SPEED_OFFSET 18
+#define MOTOR_A_SPEED_OFFSET 13
+#define MOTOR_B_SPEED_OFFSET 0
 
 /**
  * \brief Class controlling and monitoring two motors through an interface of H-bridge and encoder outputs.

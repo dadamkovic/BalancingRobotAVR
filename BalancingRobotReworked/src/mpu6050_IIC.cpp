@@ -22,7 +22,6 @@ uint8_t initIIC(){
     TWBR = 3;              //(F_CPU)/(16+2*TWBR*4^TWPS) = 400kHZ
     TWSR &= ~(_BV(TWPS1)|_BV(TWPS0));   //TWPS = 1
     TWCR |= _BV(TWEN);      //enables IIC
-    BUZZER_INIT;
     uint8_t sensor;
     IICsendStart();
     IICsendData(MPUADDRESS_WRITE);
@@ -129,7 +128,7 @@ void MPU::updateValues(float dt){
     gyroYAngle += gyroYDt;
 
     compXAngle = (0.98 * (compXAngle + gyroXDt) + 0.02 * ACC_X_ANGLE);   //serves for foward-backward orientation
-    compYAngle = (0.98 * (compYAngle + gyroYDt) + 0.02 * ACC_Y_ANGLE);      //serves for sideways orientation
+    compYAngle = (0.998 * (compYAngle + gyroYDt) + 0.002 * ACC_Y_ANGLE);      //serves for sideways orientation
 }
 
 float MPU::giveGyroAngle(float dt, char c){
