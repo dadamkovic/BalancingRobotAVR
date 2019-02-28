@@ -578,7 +578,7 @@ void uart_putf(float number){
     char buffer[20];
     //sprintf(buffer, "%f", number);
     //snprintf(buffer, sizeof buffer, "%.2f", number);
-    dtostrf(number,4,2,buffer);
+    dtostrf(number,4,5,buffer);
     uart_puts(buffer);
 }
 /*************************************************************************

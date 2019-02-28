@@ -38,7 +38,7 @@ extern MotorControl motors;
  *
  * \note It is not recommended to use vales close to the extremes as the filter then becomes useless.
  */
-#define MOTOR_FILTER_CONSTANT 0.6
+#define MOTOR_FILTER_CONSTANT 0.85
 
 /*GPIO - initialization routines for interrupt handling
  * pins used are ==> (PE4, PA0), (PE5,PA2)

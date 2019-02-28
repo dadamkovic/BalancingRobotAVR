@@ -33,11 +33,15 @@
 #define GYRO_Y_CHANGE MPUData[3]
 #define GYRO_Z_CHANGE MPUData[4]
 
+#define GYRO_X_CAL_VAL +0.0006934634647489406
+#define GYRO_Y_CAL_VAL -0.004361114678310005
+
 
 class MPU{
     public:
         float currentAngle = 0;
-        float gyroXAngle, gyroYAngle = 0;
+        float gyroXAngle = 0;
+        float gyroYAngle = 0;
         float gyroXDt, gyroYDt = 0;
         float MPUData[7];
         float compYAngle, compXAngle = 0;

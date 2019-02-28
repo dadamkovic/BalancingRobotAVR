@@ -13,8 +13,10 @@ float constrain(float x, float minValue, float maxValue){
 }
 
 float map(float num2map, float botInit, float topInit, float mapLow, float mapHigh){
-    float range = topInit - botInit;
+    float range = (topInit - botInit);
     float newRange = mapHigh - mapLow;
+
     return (mapLow + ((num2map-botInit)/range)*newRange);
 }
+
 

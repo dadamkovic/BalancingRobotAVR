@@ -116,23 +116,28 @@ MPU::MPU(){
     initIIC();
     _delay_ms(1000);
     IICReadMPU(NO_RAW);
-    compYAngle = MPUData[1];
     compXAngle = MPUData[0];
+    compYAngle = MPUData[1];
+    gyroXAngle = compXAngle;
+    gyroYAngle = compYAngle;
 };
 
 void MPU::updateValues(float dt){
     IICReadMPU(NO_RAW);
     gyroXDt = giveGyroAngle(dt, 'X');
     gyroYDt = giveGyroAngle(dt, 'Y');
-    gyroXAngle += gyroXDt;
-    gyroYAngle += gyroYDt;
+    gyroXAngle += (gyroXDt+GYRO_X_CAL_VAL*dt);
+    gyroYAngle += (gyroYDt+GYRO_Y_CAL_VAL*dt);
 
-    compXAngle = (0.98 * (compXAngle + gyroXDt) + 0.02 * ACC_X_ANGLE);   //serves for foward-backward orientation
+    compXAngle = (0.998 * (compXAngle + gyroXDt) + 0.002 * ACC_X_ANGLE);   //serves for foward-backward orientation
     compYAngle = (0.998 * (compYAngle + gyroYDt) + 0.002 * ACC_Y_ANGLE);      //serves for sideways orientation
+
 }
 
 float MPU::giveGyroAngle(float dt, char c){
-    if(c=='X')return -(GYRO_X_CHANGE + GYRO_Y_CHANGE*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ GYRO_Z_CHANGE*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
+    if(c=='X'){
+        return -(GYRO_X_CHANGE + GYRO_Y_CHANGE*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ GYRO_Z_CHANGE*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
+    }
     else if(c=='Y')return -((GYRO_Y_CHANGE*cos(compXAngle)) - GYRO_Z_CHANGE*sin(compXAngle))*dt;
     return 0;
 }

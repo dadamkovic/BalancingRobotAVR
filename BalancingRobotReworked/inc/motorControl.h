@@ -16,7 +16,7 @@ uint8_t setServoAngle(float);
 /**
  * \brief Tuned to acomodate for the differences between controlled motors.
  */
-#define MOTOR_A_SPEED_OFFSET 13
+#define MOTOR_A_SPEED_OFFSET 5
 #define MOTOR_B_SPEED_OFFSET 0
 
 /**
@@ -44,14 +44,17 @@ class MotorControl {
         void setSpeedIndividually(int8_t);
         uint8_t initMotors();
         uint8_t getBatteryLvl();
+        void updateBatteryLvl();
 
         float desiredSpeed = 0;
-        int8_t motorASpeedOffset,motorBSpeedOffset=0;
+        float motorASpeedOffset,motorBSpeedOffset=0;
         volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
         volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
         volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges
         volatile float oldSpeed = 0;            ///< Necessary to know previous speed to implement filter
         volatile float averageSpeed = 0;        ///< Average speed of both wheels
+        uint8_t currBattLvl = 50;
+        uint8_t commandDecay = 1;
 
     private:
         uint8_t SetDIR(int8_t, char);

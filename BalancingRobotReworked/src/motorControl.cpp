@@ -157,22 +157,25 @@ void MotorControl::SetSpeedBoth(int8_t motorSpeed){
 
 
 void MotorControl::setSpeedIndividually(int8_t motorSpeed){
-    int8_t motorSpeedA = motorSpeed + motorASpeedOffset;
-    int8_t motorSpeedB = motorSpeed + motorBSpeedOffset;
-
+    int16_t motorSpeedA = motorSpeed + (int8_t)motorASpeedOffset;
+    int16_t motorSpeedB = motorSpeed + (int8_t)motorBSpeedOffset;
     if(motorSpeedA>0){
          SetDIR(1,'A');
+         motorSpeedA += MOTOR_A_SPEED_OFFSET;
     }
     else{
          SetDIR(-1,'A');
          motorSpeedA = motorSpeedA*-1;
+         motorSpeedA += MOTOR_A_SPEED_OFFSET;
     }
     if(motorSpeedB>0){
         SetDIR(1,'B');
+        motorSpeedB += MOTOR_B_SPEED_OFFSET;
        }
    else{
         SetDIR(-1,'B');
         motorSpeedB = motorSpeedB*-1;
+        motorSpeedB += MOTOR_B_SPEED_OFFSET;
    }
 
     if(motorSpeedA >= 100){
@@ -184,10 +187,10 @@ void MotorControl::setSpeedIndividually(int8_t motorSpeed){
     else{
         uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
         uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
-        OCR1A = AddOffset(setSpeedA,MOTOR_A_SPEED_OFFSET);
-        OCR1B = AddOffset(setSpeedB,MOTOR_B_SPEED_OFFSET);
-        //OCR1A = setSpeed;
-        //OCR1B = setSpeed;
+        //OCR1A = AddOffset(setSpeedA,MOTOR_A_SPEED_OFFSET);
+        //OCR1B = AddOffset(setSpeedB,MOTOR_B_SPEED_OFFSET);
+        OCR1A = setSpeedA;
+        OCR1B = setSpeedB;
     }
 }
 
@@ -208,7 +211,7 @@ uint8_t MotorControl::AddOffset(uint8_t value, int8_t offset){
     else return (value+offset);
 }
 
-uint8_t MotorControl::getBatteryLvl(){
+void MotorControl::updateBatteryLvl(){
     ADMUX |= _BV(REFS0);
     ADMUX &= ~(_BV(REFS1));                                             //5V reference
     ADMUX &= ~(_BV(MUX0)|_BV(MUX1)|_BV(MUX2)|_BV(MUX3)|_BV(MUX4));      //Channel ADC0
@@ -216,7 +219,17 @@ uint8_t MotorControl::getBatteryLvl(){
     ADCSRA |= _BV(ADSC);                                                // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
     uint16_t ADCval = ADC;
-    return (uint8_t) map(((ADCval*5.0)/1024.0),3.7,4.08,0,100);
+    currBattLvl = (uint8_t)(currBattLvl * 0.99 + 0.01*map(((ADCval*5.0)/1024.0),3.7,4.08,0,100));
+    if(currBattLvl<30){
+        ROBOT_BATTERY_ON;
+    }
+    else {
+        ROBOT_BATTERY_OFF;
+    }
+}
+
+uint8_t MotorControl::getBatteryLvl(){
+    return currBattLvl;
     //return (float) (ADCval);
 }
 

@@ -20,5 +20,7 @@ float map(float, float, float, float, float);
 #define BUZZER_TOGGLE BUZZER_PORT ^= _BV(BUZZER_PIN)
 
 #define ROBOT_LED_ON DDRA |= _BV(7);PORTA |= _BV(7)
+#define ROBOT_BATTERY_ON DDRA |= _BV(5);PORTA |= _BV(5)
+#define ROBOT_BATTERY_OFF DDRA |= _BV(5);PORTA &= ~(_BV(5))
 
 #endif /* INC_UTILITY_H_ */

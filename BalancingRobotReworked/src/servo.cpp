@@ -23,8 +23,7 @@ void initServo(){
     ICR3 = 39999;                                       //frequency 50Hz
     TCCR3A |= _BV(COM3A1);                              //OCR3 clear on compare, set on BOT
 
-    TCCR3B |= _BV(CS31);
-    TCCR3B &= ~(_BV(CS30)|_BV(CS32));                   //prescaler 8
+
 
 }
 
@@ -35,6 +34,8 @@ void initServo(){
  * \note Maybe chage to return void, 0 serves no purpoupse at all.
  */
 uint8_t setServoAngle(float target){
+    TCCR3B |= _BV(CS31);
+    TCCR3B &= ~(_BV(CS30)|_BV(CS32));                   //prescaler 8
     //if((target<-99) | (target>99))return 1;
     float timingRegister = (target/90)*2000;
     OCR3A = 3000 + (int16_t)timingRegister;

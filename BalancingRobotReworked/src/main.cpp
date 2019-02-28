@@ -15,10 +15,9 @@
 #include "robotControl.h"
 #include "utility.h"
 
-//#define ANGLE_OFFSET -0.8          //less here means more forward
 #define ANGLE_OFFSET 0
 #define DEBUG_OUTPUT 0            //set to 0 to disable debugging info
-#define DATA_LOGGING 1
+#define DATA_LOGGING 0
 #define SERVO_OFFSET -8
 #define UART_BAUD_RATE 57600
 #define MSB 0xff00
@@ -36,7 +35,7 @@ int main(void){
     uint16_t counter = 0;
     float motorPower = 0;
     float desiredAngle = 0;
-    //float adcVal = 0;
+
     uint8_t command = 0x00;
     int8_t toggle_transmission = -1;
 
@@ -81,10 +80,10 @@ int main(void){
     _delay_ms(10);
 
 
-    PID speedAnglePID(0.45,0.05,0.02);                  //0.69,0.03,0.02
-    //PID anglePwmPID(12,0.0,0.25);
-    PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-
+    //PID speedAnglePID(0.45,0.05,0.02);                  //0.69,0.03,0.02
+    PID speedAnglePID(0.45,0.05,0.02);
+    //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
+    PID anglePwmPID(15.27,0.0,0.66);
     while(1){
 
         dt = clockTime();
@@ -97,7 +96,7 @@ int main(void){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,50);
-            //desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-15,15);
+            desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-10,10);
             desiredAngle=desiredAngle+ANGLE_OFFSET;
             longDt = 0;
         }
@@ -111,13 +110,15 @@ int main(void){
         //setServoAngle(SERVO_OFFSET);
         motors.setSpeedIndividually((int8_t)motorPower);
 
-        //if(longDt>dt*5)uart_putf(longDt*10);
-        //_delay_ms(10);
+        motors.desiredSpeed = 0.9999*motors.desiredSpeed + 0.0001*0;
+        motors.motorASpeedOffset = (0.9999*motors.motorASpeedOffset + 0.0001*0);
+        motors.motorBSpeedOffset = -(motors.motorASpeedOffset);
+        uart_putf(motors.motorASpeedOffset);
+        uart_putc('\n');
         while(clockTime()<0.01){
             if(uart_available()){
                 if(uart_getc()=='X'){
                 toggle_transmission *= -1;
-                BUZZER_TOGGLE;
                 }
             }
             if(uart3_available()){
@@ -126,6 +127,7 @@ int main(void){
                 //uart_putc('\n');
                 resolveCommand(&command, &anglePwmPID, &motors, &mpu6050);
             }
+            motors.updateBatteryLvl();
         }
 
         if((counter == 201) & (DEBUG_OUTPUT == 1)){
@@ -136,8 +138,6 @@ int main(void){
             uart_puts("Time delta is: ");
             uart_putf(dt);
             uart_putc('\n');
-
-
              uart_putc('\n');
              uart_putc('\n');
              uart_putc('\n');
@@ -145,9 +145,18 @@ int main(void){
     }
     if((counter % 5 == 0) && DATA_LOGGING && (toggle_transmission>0)){
         uart_putf(mpu6050.compXAngle);
+        uart_putc(',');
+        uart_putf(mpu6050.gyroXAngle);
+        uart_putc(',');
+        uart_putf(mpu6050.compYAngle);
+        uart_putc(',');
+        uart_putf(mpu6050.gyroYAngle);
+        uart_putc(',');
+        uart_putf(motors.averageSpeed);
+        uart_putc(',');
+        uart_putf(motors.getBatteryLvl());
         uart_putc('\n');
     }
-
     counter++;
     if(counter>1000)counter=0;
     longDt+=dt;
@@ -163,17 +172,18 @@ int main(void){
 uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *mpu){
     //positional starts with 0b1xxx, no others do
     if(*command & _BV(7)){
-        uint8_t steering = (*command & 0b01110000)>>4;
+        uint8_t steering = ((*command & 0b01110000)>>4);
         uint8_t throttle = (*command & 0b00001111);
-        float newSpeed = map(throttle,0,15, -10, 9);
+        float newSpeed = map(throttle,0,15, -10, 16)-5.6;
         float newSteering = map(steering,0,7,-20,20);
-        motorsC->desiredSpeed = 0.95*motorsC->desiredSpeed + 0.05*newSpeed;
-        motorsC->motorASpeedOffset = 0.7*motorsC->motorASpeedOffset + 0.3*newSteering;
+        newSteering = constrain(newSteering, -14,14);
+        motorsC->desiredSpeed = constrain((0.98*motorsC->desiredSpeed + 0.02*newSpeed),-10,10);
+        motorsC->motorASpeedOffset = (0.8*motorsC->motorASpeedOffset + 0.2*newSteering);
         motorsC->motorBSpeedOffset = -(motorsC->motorASpeedOffset);
-
         *command = 0x00;
         return 0;
     }
+    uint8_t tmp;
     switch(*command){
     case REQ_BATTERY_LVL:
         uart3_putc(motorsC->getBatteryLvl());
@@ -182,15 +192,19 @@ uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *m
     case REQ_TILT_ANGLE:
         int16_t angle;
         angle = (int16_t)(mpu->compXAngle*100);
-        uart3_putc((char)(angle&MSB));
-        uart3_putc((char)(angle&LSB));
+        tmp = (angle>>8);
+        uart3_putc(tmp);
+        tmp = (angle&LSB);
+        uart3_putc(tmp);
         *command = 0x00;
         break;
     case REQ_SPEED:
         int16_t speed;
         speed = (int16_t) (motorsC->averageSpeed*100);
-        uart3_putc((char)(speed&MSB));
-        uart3_putc((char)(speed&LSB));
+        tmp = speed>>8;
+        uart3_putc(tmp);
+        tmp = (speed&LSB);
+        uart3_putc(tmp);
         *command = 0x00;
         break;
     }
