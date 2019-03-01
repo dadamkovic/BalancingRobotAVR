@@ -38,7 +38,7 @@ extern MotorControl motors;
  *
  * \note It is not recommended to use vales close to the extremes as the filter then becomes useless.
  */
-#define MOTOR_FILTER_CONSTANT 0.85
+#define MOTOR_FILTER_CONSTANT 0.65
 
 /*GPIO - initialization routines for interrupt handling
  * pins used are ==> (PE4, PA0), (PE5,PA2)
@@ -71,8 +71,8 @@ void encodersInit(){
  * \see encodersInit
  */
 ISR(INT4_vect){
-    if( PINA & _BV(PA2))motors.encoderAB--;
-    else motors.encoderAB++;
+    if( PINA & _BV(PA2))motors.encoderAB++;
+    else motors.encoderAB--;
 };
 
 /**
@@ -91,7 +91,7 @@ ISR(TIMER4_COMPB_vect){
     motors.speedCD = (motors.encoderCD*0.0168)/0.05;      //casova konstanta pre meranie je dt = 0.05s
     */
 
-    motors.speedAB = (-motors.encoderAB*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;     //see the comments of the macro definition
+    motors.speedAB = (motors.encoderAB*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;     //see the comments of the macro definition
     motors.speedCD = (motors.encoderCD*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;
 
     motors.averageSpeed = (motors.speedAB + motors.speedCD)/2;

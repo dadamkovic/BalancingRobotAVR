@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "utility.h"
 
 #define NO_RAW 0
 #define RAW 1
@@ -33,23 +34,31 @@
 #define GYRO_Y_CHANGE MPUData[3]
 #define GYRO_Z_CHANGE MPUData[4]
 
-#define GYRO_X_CAL_VAL +0.0006934634647489406
-#define GYRO_Y_CAL_VAL -0.004361114678310005
+//#define GYRO_X_CAL_VAL +0.0006934634647489406
+//#define GYRO_Y_CAL_VAL -0.004361114678310005
+#define GYRO_X_CAL_VAL +0
+#define GYRO_Y_CAL_VAL 0
 
 
 class MPU{
     public:
+
         float currentAngle = 0;
         float gyroXAngle = 0;
         float gyroYAngle = 0;
         float gyroXDt, gyroYDt = 0;
         float MPUData[7];
         float compYAngle, compXAngle = 0;
+        float gyroXOffset = 0;
+        float gyroYOffset = 0;
+        float gyroZOffset = 0;
         MPU();
         void updateValues(float);
+        void initGyroCalibration();
     private:
         uint8_t IICReadMPU(uint8_t);
         float giveGyroAngle(float dt, char c);
+
 };
 
 uint8_t initIIC();

@@ -72,8 +72,8 @@ uint8_t MotorControl::initMotors(){
     TCCR1B |= _BV(WGM12);
     TCCR1A &= ~(_BV(WGM11));                // set fast PWM Mode - 8 bit mode
 
-    TCCR1B |= _BV(CS11);
-    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 1
+    TCCR1B |= _BV(CS10);
+    TCCR1B &= ~(_BV(CS11)|_BV(CS12));      //prescaler 1
 
 
     *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));
@@ -90,6 +90,7 @@ uint8_t MotorControl::initMotors(){
  * \param[in] motor Either character 'A' or 'B' depending on which motor the user wants to control.
  * \return 0
  */
+/*
 uint8_t MotorControl::SetDIR(int8_t dir, char motor){
     volatile uint8_t *motor_port;
     uint8_t ctrlx1;
@@ -119,6 +120,35 @@ uint8_t MotorControl::SetDIR(int8_t dir, char motor){
         *motor_port &= ~(1<< ctrlx1);
     }
 
+   return 0;
+}*/
+
+uint8_t MotorControl::SetDIR(int8_t dir, char motor){
+    switch(motor){
+        case 'A':
+                if(dir>0){
+                    PORTC &= ~_BV(PC0);
+                    PORTC |= _BV(PC2);
+                    }
+                else{
+                    PORTC &= ~_BV(PC2);
+                    PORTC |= _BV(PC0);
+                }
+                break;
+        case 'B':
+            if(dir>0){
+                PORTC &= ~_BV(PC4);
+                PORTC |= _BV(PC6);
+                }
+            else{
+                PORTC &= ~_BV(PC6);
+                PORTC |= _BV(PC4);
+            }
+                break;
+        default:
+                return 1;
+                break;
+    }
    return 0;
 }
 
@@ -157,8 +187,9 @@ void MotorControl::SetSpeedBoth(int8_t motorSpeed){
 
 
 void MotorControl::setSpeedIndividually(int8_t motorSpeed){
-    int16_t motorSpeedA = motorSpeed + (int8_t)motorASpeedOffset;
-    int16_t motorSpeedB = motorSpeed + (int8_t)motorBSpeedOffset;
+    int8_t motorSpeedA = motorSpeed +  motorSpeedOffset;
+    int8_t motorSpeedB = motorSpeed -  motorSpeedOffset;
+
     if(motorSpeedA>0){
          SetDIR(1,'A');
          motorSpeedA += MOTOR_A_SPEED_OFFSET;
@@ -177,19 +208,22 @@ void MotorControl::setSpeedIndividually(int8_t motorSpeed){
         motorSpeedB = motorSpeedB*-1;
         motorSpeedB += MOTOR_B_SPEED_OFFSET;
    }
+    uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
+    uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
+    //OCR1A = AddOffset(setSpeedA,MOTOR_A_SPEED_OFFSET);
+    //OCR1B = AddOffset(setSpeedB,MOTOR_B_SPEED_OFFSET);
+
 
     if(motorSpeedA >= 100){
         OCR1A = 255;
+    }
+    else{
+        OCR1A = setSpeedA;
     }
     if(motorSpeedB >= 100){
         OCR1B = 255;
     }
     else{
-        uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
-        uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
-        //OCR1A = AddOffset(setSpeedA,MOTOR_A_SPEED_OFFSET);
-        //OCR1B = AddOffset(setSpeedB,MOTOR_B_SPEED_OFFSET);
-        OCR1A = setSpeedA;
         OCR1B = setSpeedB;
     }
 }

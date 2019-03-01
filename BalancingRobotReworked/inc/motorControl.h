@@ -9,6 +9,7 @@
 #define MOTORCONTROL_H_
 
 #include <avr/io.h>
+#include "uart.h"
 void encodersInit();
 void initServo();
 uint8_t setServoAngle(float);
@@ -16,7 +17,7 @@ uint8_t setServoAngle(float);
 /**
  * \brief Tuned to acomodate for the differences between controlled motors.
  */
-#define MOTOR_A_SPEED_OFFSET 5
+#define MOTOR_A_SPEED_OFFSET 4
 #define MOTOR_B_SPEED_OFFSET 0
 
 /**
@@ -47,7 +48,7 @@ class MotorControl {
         void updateBatteryLvl();
 
         float desiredSpeed = 0;
-        float motorASpeedOffset,motorBSpeedOffset=0;
+        float motorSpeedOffset=0;
         volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
         volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
         volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges

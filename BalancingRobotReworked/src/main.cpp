@@ -45,6 +45,7 @@ int main(void){
     sei();
     encodersInit();
     BUZZER_INIT;
+    //BUTTONS_INIT;
     //BUZZER_ON;
     //_delay_ms(1000);
     //BUZZER_OFF;
@@ -81,9 +82,9 @@ int main(void){
 
 
     //PID speedAnglePID(0.45,0.05,0.02);                  //0.69,0.03,0.02
-    PID speedAnglePID(0.45,0.05,0.02);
+    PID speedAnglePID(0.5,0.08,0.05);
     //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-    PID anglePwmPID(15.27,0.0,0.66);
+    PID anglePwmPID(23,0.0,0);
     while(1){
 
         dt = clockTime();
@@ -95,26 +96,25 @@ int main(void){
         if(counter%6 == 0){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
-            desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,50);
-            desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-10,10);
-            desiredAngle=desiredAngle+ANGLE_OFFSET;
+            desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
+            desiredAngle = constrain(desiredAngle,-5,5);
             longDt = 0;
         }
-        motorPower= anglePwmPID.giveOutput(mpu6050.compXAngle*RAD_TO_DEG,desiredAngle,dt,0);        //calling PID to give us value for motors
-        motorPower = constrain(motorPower,-100,100);  //constraining PID output
-
+        motorPower= anglePwmPID.giveOutput(mpu6050.compXAngle*RAD_TO_DEG,desiredAngle,dt,20);        //calling PID to give us value for motors
+        motorPower = constrain(motorPower,-80,80);  //constraining PID output
+        //uart_putf(motors.desiredSpeed);
         //servoAngle = servoPID.giveOutput(compYAngle,0,dt,18000);
         //servoAngle = constrain(servoAngle,-20,20);
         //setServoAngle(servoAngle*RAD_TO_DEG+SERVO_OFFSET);
 
         //setServoAngle(SERVO_OFFSET);
-        motors.setSpeedIndividually((int8_t)motorPower);
+        if(motorPower>0)motorPower = 100*sqrt(motorPower/100.0);
+        else motorPower = -100*sqrt(-motorPower/100.0);
+        motors.setSpeedIndividually(motorPower);
 
-        motors.desiredSpeed = 0.9999*motors.desiredSpeed + 0.0001*0;
-        motors.motorASpeedOffset = (0.9999*motors.motorASpeedOffset + 0.0001*0);
-        motors.motorBSpeedOffset = -(motors.motorASpeedOffset);
-        uart_putf(motors.motorASpeedOffset);
-        uart_putc('\n');
+        motors.desiredSpeed = 0.9999*motors.desiredSpeed + 0.00001*0;
+        motors.motorSpeedOffset = (0.9999*motors.motorSpeedOffset + 0.0001*0);
+        if(BUTTON_A)mpu6050.initGyroCalibration();
         while(clockTime()<0.01){
             if(uart_available()){
                 if(uart_getc()=='X'){
@@ -174,12 +174,15 @@ uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *m
     if(*command & _BV(7)){
         uint8_t steering = ((*command & 0b01110000)>>4);
         uint8_t throttle = (*command & 0b00001111);
-        float newSpeed = map(throttle,0,15, -10, 16)-5.6;
-        float newSteering = map(steering,0,7,-20,20);
-        newSteering = constrain(newSteering, -14,14);
-        motorsC->desiredSpeed = constrain((0.98*motorsC->desiredSpeed + 0.02*newSpeed),-10,10);
-        motorsC->motorASpeedOffset = (0.8*motorsC->motorASpeedOffset + 0.2*newSteering);
-        motorsC->motorBSpeedOffset = -(motorsC->motorASpeedOffset);
+        float newSpeed = map(throttle,0,15, -15, 8.324)+1;
+        newSpeed = constrain(newSpeed,-8,8);
+        float newSteering = map(steering,0,7,-20,20)-2.8;
+        newSteering = constrain(newSteering, -5,5);
+        if(((motorsC->averageSpeed)<4 )& ((motorsC->averageSpeed)>-4))
+            newSteering = newSteering * 4;
+        motorsC->desiredSpeed = (0.9*motorsC->desiredSpeed + 0.1*newSpeed);
+        float offset = newSteering;
+        motorsC->motorSpeedOffset = offset;
         *command = 0x00;
         return 0;
     }
@@ -206,6 +209,10 @@ uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *m
         tmp = (speed&LSB);
         uart3_putc(tmp);
         *command = 0x00;
+        break;
+    case REQ_MPU_CALIBRATION:
+        mpu->initGyroCalibration();
+        uart3_putc(ACKNOWLEDGE);
         break;
     }
         return 0;

@@ -22,5 +22,9 @@ float map(float, float, float, float, float);
 #define ROBOT_LED_ON DDRA |= _BV(7);PORTA |= _BV(7)
 #define ROBOT_BATTERY_ON DDRA |= _BV(5);PORTA |= _BV(5)
 #define ROBOT_BATTERY_OFF DDRA |= _BV(5);PORTA &= ~(_BV(5))
+#define BUTTONS_INIT PORTA |= _BV(PA4)|_BV(PA6);PORTC|=_BV(PC7)
 
+#define BUTTON_A (PINA & _BV(PA4))
+#define BUTTON_B (PINA & _BV(PA6))
+#define BUTTON_C (PINC & _BV(PC7))
 #endif /* INC_UTILITY_H_ */

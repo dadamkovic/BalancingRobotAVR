@@ -25,6 +25,7 @@
 #define CHANGE_P 0x0A
 #define CHANGE_I 0x0B
 #define CHANGE_D 0x0C
+#define ACKNOWLEDGE 0x0D
 
 #define H_REGISTER1 &DDRC
 #define H_REGISTER2 &DDRC

@@ -126,11 +126,13 @@ void MPU::updateValues(float dt){
     IICReadMPU(NO_RAW);
     gyroXDt = giveGyroAngle(dt, 'X');
     gyroYDt = giveGyroAngle(dt, 'Y');
-    gyroXAngle += (gyroXDt+GYRO_X_CAL_VAL*dt);
-    gyroYAngle += (gyroYDt+GYRO_Y_CAL_VAL*dt);
+    //gyroXAngle += (gyroXDt+GYRO_X_CAL_VAL*dt);
+    //gyroYAngle += (gyroYDt+GYRO_Y_CAL_VAL*dt);
+    gyroXAngle += (gyroXDt+gyroXOffset);
+    gyroYAngle += (gyroYDt+gyroYOffset);
 
-    compXAngle = (0.998 * (compXAngle + gyroXDt) + 0.002 * ACC_X_ANGLE);   //serves for foward-backward orientation
-    compYAngle = (0.998 * (compYAngle + gyroYDt) + 0.002 * ACC_Y_ANGLE);      //serves for sideways orientation
+    compXAngle = (0.995 * (compXAngle + gyroXDt) + 0.005 * ACC_X_ANGLE);   //serves for foward-backward orientation
+    compYAngle = (0.99 * (compYAngle + gyroYDt) + 0.01 * ACC_Y_ANGLE);      //serves for sideways orientation
 
 }
 
@@ -195,11 +197,14 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         float xGyro = (gyroX / GYRO_CONSTANT) * DEG_TO_RAD;
         float yGyro = (gyroY / GYRO_CONSTANT) * DEG_TO_RAD;
         float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
+        float tmp = gyroXOffset;
         MPUData[0] = xAngle;
         MPUData[1] = yAngle;
-        MPUData[2] = xGyro;
-        MPUData[3] = yGyro;
-        MPUData[4] = zGyro;
+        MPUData[2] = xGyro - tmp;
+        tmp = gyroYOffset;
+        MPUData[3] = yGyro - tmp;
+        tmp = gyroZOffset;
+        MPUData[4] = zGyro - tmp;
         //BUZZER_OFF;
         //uart_puti((uint16_t)((received[0] << 8) | received[1]));
         //uart_putc('\n');
@@ -213,18 +218,31 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
  * \param[in] samples Number of samples for calibration.
  */
 
-uint8_t calibrate(float *calibratedValues, uint16_t samples = 1000){
-    //BUZZER_ON;
-    float bufferAll[5];
-    float bufferSum[5];
-    for(uint16_t i=0;i<samples;i++){
-            //IICReadMPU(bufferAll,0);
-            for(uint8_t j=0;j<5;j++)bufferSum[j]+=bufferAll[j];
-            _delay_ms(2);
+void MPU::initGyroCalibration(){
+    BUZZER_ON;
+    _delay_ms(2000);
+    OCR1A = 0;
+    OCR1B = 0;
+    BUZZER_OFF;
+    float xErr = 0;
+    float yErr = 0;
+    float zErr = 0;
+    for(uint16_t i=0;i<1000;i++){
+        //if(i%2 == 0)BUZZER_TOGGLE;
+        IICReadMPU(NO_RAW);
+        xErr += GYRO_X_CHANGE;
+        yErr += GYRO_Y_CHANGE;
+        zErr += GYRO_Z_CHANGE;
+        _delay_ms(2);
     }
-    for(uint8_t i=0;i<5;i++)calibratedValues[i] = (float)bufferSum[i]/samples;
-    //BUZZER_OFF;
-    return 0;
+    gyroXOffset = xErr/1000.0;
+    gyroYOffset = xErr/1000.0;
+    gyroZOffset = xErr/1000.0;
+    uart_putf(gyroXOffset);
+    uart_putc('\n');
+    BUZZER_ON;
+    _delay_ms(2000);
+    BUZZER_OFF;
 }
 
 
