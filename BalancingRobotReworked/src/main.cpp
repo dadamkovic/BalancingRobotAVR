@@ -110,9 +110,8 @@ int main(void){
         //setServoAngle(SERVO_OFFSET);
         motors.setSpeedIndividually((int8_t)motorPower);
 
-        motors.desiredSpeed = 0.9999*motors.desiredSpeed + 0.0001*0;
-        motors.motorASpeedOffset = (0.9999*motors.motorASpeedOffset + 0.0001*0);
-        motors.motorBSpeedOffset = -(motors.motorASpeedOffset);
+        //motors.motorASpeedOffset = (0.999999*motors.motorASpeedOffset + 0.000001*0);
+        //motors.motorBSpeedOffset = -(motors.motorASpeedOffset);
         uart_putf(motors.motorASpeedOffset);
         uart_putc('\n');
         while(clockTime()<0.01){
@@ -178,7 +177,7 @@ uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *m
         float newSteering = map(steering,0,7,-20,20);
         newSteering = constrain(newSteering, -14,14);
         motorsC->desiredSpeed = constrain((0.98*motorsC->desiredSpeed + 0.02*newSpeed),-10,10);
-        motorsC->motorASpeedOffset = (0.8*motorsC->motorASpeedOffset + 0.2*newSteering);
+        motorsC->motorASpeedOffset = newSteering;
         motorsC->motorBSpeedOffset = -(motorsC->motorASpeedOffset);
         *command = 0x00;
         return 0;
