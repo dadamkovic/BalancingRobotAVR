@@ -157,8 +157,8 @@ void MotorControl::SetSpeedBoth(int8_t motorSpeed){
 
 
 void MotorControl::setSpeedIndividually(int8_t motorSpeed){
-    int8_t motorSpeedA = motorSpeed + (int8_t)motorASpeedOffset;
-    int8_t motorSpeedB = motorSpeed + (int8_t)motorBSpeedOffset;
+    int8_t motorSpeedA = motorSpeed + (int8_t)motorSpeedOffset;
+    int8_t motorSpeedB = motorSpeed -(int8_t)motorSpeedOffset;
     if(motorSpeedA>0){
          SetDIR(1,'A');
          motorSpeedA += MOTOR_A_SPEED_OFFSET;

@@ -95,13 +95,13 @@ int main(void){
         if(counter%6 == 0){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
-            desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,50);
-            desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-10,10);
+            desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
+            desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-5,5);
             desiredAngle=desiredAngle+ANGLE_OFFSET;
             longDt = 0;
         }
         motorPower= anglePwmPID.giveOutput(mpu6050.compXAngle*RAD_TO_DEG,desiredAngle,dt,0);        //calling PID to give us value for motors
-        motorPower = constrain(motorPower,-100,100);  //constraining PID output
+        motorPower = constrain(motorPower,-90,90);  //constraining PID output
 
         //servoAngle = servoPID.giveOutput(compYAngle,0,dt,18000);
         //servoAngle = constrain(servoAngle,-20,20);
@@ -110,10 +110,9 @@ int main(void){
         //setServoAngle(SERVO_OFFSET);
         motors.setSpeedIndividually((int8_t)motorPower);
 
-        //motors.motorASpeedOffset = (0.999999*motors.motorASpeedOffset + 0.000001*0);
-        //motors.motorBSpeedOffset = -(motors.motorASpeedOffset);
-        uart_putf(motors.motorASpeedOffset);
-        uart_putc('\n');
+        motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset + 0.00001*0);
+        motors.desiredSpeed = (0.99*motors.desiredSpeed + 0.01*0);
+
         while(clockTime()<0.01){
             if(uart_available()){
                 if(uart_getc()=='X'){
@@ -124,7 +123,7 @@ int main(void){
                 command = uart3_getc();
                 //uart_puti(command);
                 //uart_putc('\n');
-                resolveCommand(&command, &anglePwmPID, &motors, &mpu6050);
+                resolveCommand(&command, &speedAnglePID, &motors, &mpu6050);
             }
             motors.updateBatteryLvl();
         }
@@ -175,10 +174,24 @@ uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *m
         uint8_t throttle = (*command & 0b00001111);
         float newSpeed = map(throttle,0,15, -10, 16)-5.6;
         float newSteering = map(steering,0,7,-20,20);
-        newSteering = constrain(newSteering, -14,14);
-        motorsC->desiredSpeed = constrain((0.98*motorsC->desiredSpeed + 0.02*newSpeed),-10,10);
-        motorsC->motorASpeedOffset = newSteering;
-        motorsC->motorBSpeedOffset = -(motorsC->motorASpeedOffset);
+        newSteering = constrain(newSteering, -7,7)-2.857;
+        motorsC->desiredSpeed = constrain((0.8*motorsC->desiredSpeed + 0.2*newSpeed),-7,7);
+        motorsC->motorSpeedOffset = 0.6*motorsC->motorSpeedOffset + 0.4*(newSteering);
+        if((motorsC->desiredSpeed<4) && (motorsC->desiredSpeed>-4) && (motorsC->averageSpeed<4) && (motorsC->averageSpeed>-4)){
+            if(newSteering>2){
+                motorsC->SetDIR(1,'A');
+                motorsC->SetDIR(-1,'B');
+                OCR1A = 190;
+                OCR1B = 190;
+            }
+            else if(newSteering<-2){
+                motorsC->SetDIR(-1,'A');
+                motorsC->SetDIR(1,'B');
+                OCR1A = 190;
+                OCR1B = 190;
+            }
+
+        }
         *command = 0x00;
         return 0;
     }

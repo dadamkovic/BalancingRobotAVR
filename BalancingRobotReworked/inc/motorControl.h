@@ -16,7 +16,7 @@ uint8_t setServoAngle(float);
 /**
  * \brief Tuned to acomodate for the differences between controlled motors.
  */
-#define MOTOR_A_SPEED_OFFSET 5
+#define MOTOR_A_SPEED_OFFSET 4
 #define MOTOR_B_SPEED_OFFSET 0
 
 /**
@@ -47,7 +47,7 @@ class MotorControl {
         void updateBatteryLvl();
 
         float desiredSpeed = 0;
-        float motorASpeedOffset,motorBSpeedOffset=0;
+        float motorSpeedOffset=0;
         volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
         volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
         volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges
@@ -55,9 +55,9 @@ class MotorControl {
         volatile float averageSpeed = 0;        ///< Average speed of both wheels
         uint8_t currBattLvl = 50;
         uint8_t commandDecay = 1;
-
-    private:
         uint8_t SetDIR(int8_t, char);
+    private:
+
         uint8_t AddOffset(uint8_t, int8_t);
         volatile uint8_t *_Motor_A_DDR;         ///< Holds the address of the DDRx register for both, IN inputs of a H-bridge A
         volatile uint8_t *_Motor_B_DDR;         ///< Holds the address of the DDRx register for both, IN inputs of a H-bridge B

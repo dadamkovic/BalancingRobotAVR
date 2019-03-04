@@ -129,8 +129,8 @@ void MPU::updateValues(float dt){
     gyroXAngle += (gyroXDt+GYRO_X_CAL_VAL*dt);
     gyroYAngle += (gyroYDt+GYRO_Y_CAL_VAL*dt);
 
-    compXAngle = (0.998 * (compXAngle + gyroXDt) + 0.002 * ACC_X_ANGLE);   //serves for foward-backward orientation
-    compYAngle = (0.998 * (compYAngle + gyroYDt) + 0.002 * ACC_Y_ANGLE);      //serves for sideways orientation
+    compXAngle = (0.99 * (compXAngle + gyroXDt) + 0.01 * ACC_X_ANGLE);   //serves for foward-backward orientation
+    compYAngle = (0.99 * (compYAngle + gyroYDt) + 0.01 * ACC_Y_ANGLE);      //serves for sideways orientation
 
 }
 
