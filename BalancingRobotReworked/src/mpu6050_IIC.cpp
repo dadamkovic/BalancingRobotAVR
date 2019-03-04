@@ -111,6 +111,9 @@ uint8_t IICreadNack(){
     IICwaitForComplete();
     return TWDR;
 }
+/**
+ * \brief COnsructor of the MPU class, performs initialization of mpu6050 and loads initial values
+ */
 
 MPU::MPU(){
     initIIC();
@@ -122,26 +125,33 @@ MPU::MPU(){
     gyroYAngle = compYAngle;
 };
 
+/**
+ * \brief Loads new values from mpu6050 and updates internal parameters accordingly.
+ */
 void MPU::updateValues(float dt){
     IICReadMPU(NO_RAW);
     gyroXDt = giveGyroAngle(dt, 'X');
     gyroYDt = giveGyroAngle(dt, 'Y');
-    //gyroXAngle += (gyroXDt+GYRO_X_CAL_VAL*dt);
-    //gyroYAngle += (gyroYDt+GYRO_Y_CAL_VAL*dt);
-    gyroXAngle += (gyroXDt+gyroXOffset);
-    gyroYAngle += (gyroYDt+gyroYOffset);
+    gyroXAngle += (gyroXDt);
+    gyroYAngle += (gyroYDt);
 
     compXAngle = (0.995 * (compXAngle + gyroXDt) + 0.005 * ACC_X_ANGLE);   //serves for foward-backward orientation
     compYAngle = (0.99 * (compYAngle + gyroYDt) + 0.01 * ACC_Y_ANGLE);      //serves for sideways orientation
 
 }
 
+/**
+ * \brief Private method of the MPU class, used to calculate angle change from gyroscope readings.
+ * \param[in] dt Time between individual samples (i.e. readings from mpu).
+ * \param[in] c Either 'X' or 'Y' depending on which axis we calculate angle change for.
+ * \param[out] 0 Calculated value, or -1000 in case of error.
+ */
 float MPU::giveGyroAngle(float dt, char c){
     if(c=='X'){
         return -(GYRO_X_CHANGE + GYRO_Y_CHANGE*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ GYRO_Z_CHANGE*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
     }
     else if(c=='Y')return -((GYRO_Y_CHANGE*cos(compXAngle)) - GYRO_Z_CHANGE*sin(compXAngle))*dt;
-    return 0;
+    return -1000;
 }
 /**
  * \brief Queries MPU6050 for data and processes it.
@@ -205,17 +215,19 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         MPUData[3] = yGyro - tmp;
         tmp = gyroZOffset;
         MPUData[4] = zGyro - tmp;
-        //BUZZER_OFF;
-        //uart_puti((uint16_t)((received[0] << 8) | received[1]));
-        //uart_putc('\n');
         }
    return 0;
 }
 
 /**
- * \brief Starts calibration routine, robot layed on the back.
- * \param[out] calibratedValues Buffer that will store values for calibration, min 5 float variables.
- * \param[in] samples Number of samples for calibration.
+ * \brief Starts calibration routine, robot laying on the back.
+ *
+ * Collects a given amount of gyroscope samples from MPU and calculates their mean. If the robto is still it should be 0 in case the
+ * measurement is perfect, in reality it will be a small value representing the gyroscope acceleration measure. We can later use this
+ * calculated mean to correct every gyroscope reading.
+ *
+ * \note CAlling this method breaks the flow of the program and halts its execution for 4+ seconds. User is warned about this by a sharp
+ * beeping sound at the beginning, middle and end of the calibration.
  */
 
 void MPU::initGyroCalibration(){

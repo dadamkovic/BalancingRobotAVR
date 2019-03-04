@@ -192,26 +192,26 @@ void MotorControl::setSpeedIndividually(int8_t motorSpeed){
 
     if(motorSpeedA>0){
          SetDIR(1,'A');
-         motorSpeedA += MOTOR_A_SPEED_OFFSET;
+         //motorSpeedA += MOTOR_A_SPEED_OFFSET;
     }
     else{
          SetDIR(-1,'A');
          motorSpeedA = motorSpeedA*-1;
-         motorSpeedA += MOTOR_A_SPEED_OFFSET;
+         //motorSpeedA += MOTOR_A_SPEED_OFFSET;
     }
     if(motorSpeedB>0){
         SetDIR(1,'B');
-        motorSpeedB += MOTOR_B_SPEED_OFFSET;
+        //motorSpeedB += MOTOR_B_SPEED_OFFSET;
        }
    else{
         SetDIR(-1,'B');
         motorSpeedB = motorSpeedB*-1;
-        motorSpeedB += MOTOR_B_SPEED_OFFSET;
+        //motorSpeedB += MOTOR_B_SPEED_OFFSET;
    }
-    uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
-    uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
-    //OCR1A = AddOffset(setSpeedA,MOTOR_A_SPEED_OFFSET);
-    //OCR1B = AddOffset(setSpeedB,MOTOR_B_SPEED_OFFSET);
+    //uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
+    //uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
+    uint8_t setSpeedA = uint8_t(motorSpeedA) + MOTOR_A_SPEED_OFFSET;
+    uint8_t setSpeedB = uint8_t(motorSpeedB) + MOTOR_B_SPEED_OFFSET;
 
 
     if(motorSpeedA >= 100){

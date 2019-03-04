@@ -8,6 +8,9 @@
 #ifndef INC_UTILITY_H_
 #define INC_UTILITY_H_
 
+#include "uart.h"
+#include "inttypes.h"
+
 float constrain(float, float, float);
 float map(float, float, float, float, float);
 

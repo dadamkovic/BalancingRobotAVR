@@ -16,7 +16,7 @@
 #include "utility.h"
 
 #define ANGLE_OFFSET 0
-#define DEBUG_OUTPUT 0            //set to 0 to disable debugging info
+#define DEBUG_OUTPUT 1            //set to 0 to disable debugging info
 #define DATA_LOGGING 0
 #define SERVO_OFFSET -8
 #define UART_BAUD_RATE 57600
@@ -82,9 +82,10 @@ int main(void){
 
 
     //PID speedAnglePID(0.45,0.05,0.02);                  //0.69,0.03,0.02
-    PID speedAnglePID(0.5,0.08,0.05);
+    //PID speedAnglePID(0.6,0,0.00);
+    PID speedAnglePID(0.55,0.05,0.02);
     //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-    PID anglePwmPID(23,0.0,0);
+    PID anglePwmPID(14.5,0.05,0.5);
     while(1){
 
         dt = clockTime();
@@ -101,15 +102,12 @@ int main(void){
             longDt = 0;
         }
         motorPower= anglePwmPID.giveOutput(mpu6050.compXAngle*RAD_TO_DEG,desiredAngle,dt,20);        //calling PID to give us value for motors
-        motorPower = constrain(motorPower,-80,80);  //constraining PID output
-        //uart_putf(motors.desiredSpeed);
-        //servoAngle = servoPID.giveOutput(compYAngle,0,dt,18000);
-        //servoAngle = constrain(servoAngle,-20,20);
-        //setServoAngle(servoAngle*RAD_TO_DEG+SERVO_OFFSET);
+        motorPower = constrain(motorPower,-90,90);  //constraining PID output
 
-        //setServoAngle(SERVO_OFFSET);
-        if(motorPower>0)motorPower = 100*sqrt(motorPower/100.0);
-        else motorPower = -100*sqrt(-motorPower/100.0);
+
+        //if(motorPower>0)motorPower = 100*sqrt(motorPower/100.0);
+        //else motorPower = -100*sqrt(-motorPower/100.0);
+
         motors.setSpeedIndividually(motorPower);
 
         motors.desiredSpeed = 0.9999*motors.desiredSpeed + 0.00001*0;
@@ -123,8 +121,6 @@ int main(void){
             }
             if(uart3_available()){
                 command = uart3_getc();
-                //uart_puti(command);
-                //uart_putc('\n');
                 resolveCommand(&command, &anglePwmPID, &motors, &mpu6050);
             }
             motors.updateBatteryLvl();
@@ -132,38 +128,35 @@ int main(void){
 
         if((counter == 201) & (DEBUG_OUTPUT == 1)){
 
-            uart_puts("Motors: ");
-            uart_putf(motors.getBatteryLvl());
+            uart_puts("Desired speed: ");
+            uart_putf(desiredAngle);
             uart_putc('\n');
-            uart_puts("Time delta is: ");
-            uart_putf(dt);
+            uart_puts("Angle: ");
+            uart_putf(mpu6050.compXAngle);
             uart_putc('\n');
              uart_putc('\n');
              uart_putc('\n');
              uart_putc('\n');
             counter=0;
+        }
+        if((counter % 5 == 0) && DATA_LOGGING && (toggle_transmission>0)){
+            uart_putf(mpu6050.compXAngle);
+            uart_putc(',');
+            uart_putf(mpu6050.gyroXAngle);
+            uart_putc(',');
+            uart_putf(mpu6050.compYAngle);
+            uart_putc(',');
+            uart_putf(mpu6050.gyroYAngle);
+            uart_putc(',');
+            uart_putf(motors.averageSpeed);
+            uart_putc(',');
+            uart_putf(motors.getBatteryLvl());
+            uart_putc('\n');
+        }
+        counter++;
+        if(counter>1000)counter=0;
+        longDt+=dt;
     }
-    if((counter % 5 == 0) && DATA_LOGGING && (toggle_transmission>0)){
-        uart_putf(mpu6050.compXAngle);
-        uart_putc(',');
-        uart_putf(mpu6050.gyroXAngle);
-        uart_putc(',');
-        uart_putf(mpu6050.compYAngle);
-        uart_putc(',');
-        uart_putf(mpu6050.gyroYAngle);
-        uart_putc(',');
-        uart_putf(motors.averageSpeed);
-        uart_putc(',');
-        uart_putf(motors.getBatteryLvl());
-        uart_putc('\n');
-    }
-    counter++;
-    if(counter>1000)counter=0;
-    longDt+=dt;
-
-    }
-
-
     return 0;
 }
 
@@ -177,45 +170,44 @@ uint8_t resolveCommand(uint8_t *command, PID *pid, MotorControl *motorsC, MPU *m
         float newSpeed = map(throttle,0,15, -15, 8.324)+1;
         newSpeed = constrain(newSpeed,-8,8);
         float newSteering = map(steering,0,7,-20,20)-2.8;
-        newSteering = constrain(newSteering, -5,5);
-        if(((motorsC->averageSpeed)<4 )& ((motorsC->averageSpeed)>-4))
-            newSteering = newSteering * 4;
+        newSteering = constrain(newSteering, -30,30);
+        newSteering = 0.9*motorsC->motorSpeedOffset + 0.1 * newSteering;
         motorsC->desiredSpeed = (0.9*motorsC->desiredSpeed + 0.1*newSpeed);
-        float offset = newSteering;
-        motorsC->motorSpeedOffset = offset;
+        motorsC->motorSpeedOffset = newSteering;
         *command = 0x00;
         return 0;
     }
     uint8_t tmp;
+
     switch(*command){
-    case REQ_BATTERY_LVL:
-        uart3_putc(motorsC->getBatteryLvl());
-        *command = 0x00;
-        break;
-    case REQ_TILT_ANGLE:
-        int16_t angle;
-        angle = (int16_t)(mpu->compXAngle*100);
-        tmp = (angle>>8);
-        uart3_putc(tmp);
-        tmp = (angle&LSB);
-        uart3_putc(tmp);
-        *command = 0x00;
-        break;
-    case REQ_SPEED:
-        int16_t speed;
-        speed = (int16_t) (motorsC->averageSpeed*100);
-        tmp = speed>>8;
-        uart3_putc(tmp);
-        tmp = (speed&LSB);
-        uart3_putc(tmp);
-        *command = 0x00;
-        break;
-    case REQ_MPU_CALIBRATION:
-        mpu->initGyroCalibration();
-        uart3_putc(ACKNOWLEDGE);
-        break;
-    }
-        return 0;
-    }
+        case REQ_BATTERY_LVL:
+            uart3_putc(motorsC->getBatteryLvl());
+            *command = 0x00;
+            break;
+        case REQ_TILT_ANGLE:
+            int16_t angle;
+            angle = (int16_t)(mpu->compXAngle*100);
+            tmp = (angle>>8);
+            uart3_putc(tmp);
+            tmp = (angle&LSB);
+            uart3_putc(tmp);
+            *command = 0x00;
+            break;
+        case REQ_SPEED:
+            int16_t speed;
+            speed = (int16_t) (motorsC->averageSpeed*100);
+            tmp = speed>>8;
+            uart3_putc(tmp);
+            tmp = (speed&LSB);
+            uart3_putc(tmp);
+            *command = 0x00;
+            break;
+        case REQ_MPU_CALIBRATION:
+            mpu->initGyroCalibration();
+            uart3_putc(ACKNOWLEDGE);
+            break;
+        }
+    return 0;
+}
 
 
