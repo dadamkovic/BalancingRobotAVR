@@ -36,7 +36,12 @@ MotorControl::MotorControl(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, vola
         : _Motor_A_DDR(a_ddr),_Motor_B_DDR(b_ddr), _Motor_A_PORT(a_port), _Motor_B_PORT(b_port), _Motor_A_PIN_1(a_pin_1), _Motor_A_PIN_2(a_pin_2),\
           _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {}
 
-
+/**
+ * \brief class constructor for the MotorControl class
+ * The DDR for connections to the H-bridge are loaded as well as PORT and pin values. The data is later used to send correct signals to the
+ * H-bridge. The limitation is that for a given motor both pins have to fall under the same control register. The MotorControl class is
+ * capable of controlling two motors at the same time as well as keep track of their movements (speed, position, distance traveled ...)
+ */
 void MotorControl::initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
                            uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2){
     _Motor_A_DDR = a_ddr;
@@ -73,7 +78,7 @@ uint8_t MotorControl::initMotors(){
     TCCR1A &= ~(_BV(WGM11));                // set fast PWM Mode - 8 bit mode
 
     TCCR1B |= _BV(CS11);
-    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 1
+    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 8
 
 
     *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));
@@ -122,40 +127,10 @@ uint8_t MotorControl::SetDIR(int8_t dir, char motor){
    return 0;
 }
 
-
-
-
-
 /**
- * \brief Sets the speed of both motors at once, to the same level.
- * \param[in] motorSpeed Value from -100 to 100, where 0 is shutdown and 100 full speed (direction depends on sign).
- * \return void
+ * \brief sets the PWM for the H-bridge, taking into account the individual offsets for each motor
+ * \param[in] motorSpeed value between -100 and 100 where negative values indicate reversed direction
  */
-void MotorControl::SetSpeedBoth(int8_t motorSpeed){
-    if(motorSpeed>0){
-         SetDIR(1,'A');
-         SetDIR(1,'B');
-    }
-    else{
-         SetDIR(-1,'A');
-         SetDIR(-1,'B');
-         motorSpeed = motorSpeed*-1;
-    }
-
-    if(motorSpeed >= 100){
-        OCR1A = 255;
-        OCR1B = 255;
-    }
-    else{
-        uint8_t setSpeed = (motorSpeed*2)+55;   //conversion from 0-100 to 0-255
-        OCR1A = AddOffset(setSpeed,MOTOR_A_SPEED_OFFSET);
-        OCR1B = AddOffset(setSpeed,MOTOR_B_SPEED_OFFSET);
-        //OCR1A = setSpeed;
-        //OCR1B = setSpeed;
-    }
-}
-
-
 void MotorControl::setSpeedIndividually(int8_t motorSpeed){
     int8_t motorSpeedA = motorSpeed + (int8_t)motorSpeedOffset;
     int8_t motorSpeedB = motorSpeed -(int8_t)motorSpeedOffset;
@@ -177,8 +152,8 @@ void MotorControl::setSpeedIndividually(int8_t motorSpeed){
         motorSpeedB = motorSpeedB*-1;
         motorSpeedB += MOTOR_B_SPEED_OFFSET;
    }
-    uint8_t setSpeedA = (motorSpeedA*2)+55;   //conversion from 0-100 to 0-255
-    uint8_t setSpeedB = (motorSpeedB*2)+55;   //conversion from 0-100 to 0-255
+    uint8_t setSpeedA = (motorSpeedA*2)+50;   //conversion from 0-100 to 0-255
+    uint8_t setSpeedB = (motorSpeedB*2)+50;   //conversion from 0-100 to 0-255
     if(motorSpeedA >= 100){
         OCR1A = 255;
     }
@@ -210,6 +185,12 @@ uint8_t MotorControl::AddOffset(uint8_t value, int8_t offset){
     else return (value+offset);
 }
 
+/**
+ * \brief sets up the ADC and reads the voltage value from the battery
+ * The method updates the class parameter currBattLvl with new value based on the voltage read from
+ * voltage divider connected to the battery leads. If the value falls under a given threshold
+ * a red LED light is turned on to signal to the user the need for battery recharge.
+ */
 void MotorControl::updateBatteryLvl(){
     ADMUX |= _BV(REFS0);
     ADMUX &= ~(_BV(REFS1));                                             //5V reference

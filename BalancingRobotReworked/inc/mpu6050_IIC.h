@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <avr/eeprom.h>
 
 #define NO_RAW 0
 #define RAW 1
@@ -32,22 +33,29 @@
 #define GYRO_X_CHANGE MPUData[2]
 #define GYRO_Y_CHANGE MPUData[3]
 #define GYRO_Z_CHANGE MPUData[4]
+#define FIN_COMP 0.998
 
-#define GYRO_X_CAL_VAL +0.0006934634647489406
-#define GYRO_Y_CAL_VAL -0.004361114678310005
-
+extern float EEMEM xCalAddr;
+extern float EEMEM yCalAddr;
+extern float EEMEM zCalAddr;
 
 class MPU{
     public:
-        float currentAngle = 0;
-        float gyroXAngle = 0;
-        float gyroYAngle = 0;
-        float gyroXDt, gyroYDt = 0;
-        float MPUData[7];
-        float compYAngle, compXAngle = 0;
+        volatile float currentAngle = 0;
+        volatile float gyroXAngle = 0;
+        volatile float gyroYAngle = 0;
+        volatile float gyroXDt, gyroYDt = 0;
+        volatile float MPUData[7];
+        volatile float compYAngle, compXAngle = 0;
+        volatile float xCal = 0, yCal = 0, zCal = 0;
+
         MPU();
         void updateValues(float);
+        void calibrate(uint16_t);
+        void reset();
     private:
+        float compX = 0.99;
+        float compY = 0.99;
         uint8_t IICReadMPU(uint8_t);
         float giveGyroAngle(float dt, char c);
 };
@@ -58,7 +66,5 @@ void IICsendStop();
 void IICsendData(uint8_t);
 uint8_t IICreadAck();
 uint8_t IICreadNack();
-
-uint8_t calibrate(float*, uint16_t);
 
 #endif /* MPU6050_IIC_H_ */

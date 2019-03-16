@@ -8,6 +8,7 @@
 #include "mpu6050_IIC.h"
 #include <util/delay.h>
 
+
 /**
  * \brief Called <b> once </b> to initialize the MPU6050.
  * \return 0 if initialization succeeds, 1 otherwise.
@@ -120,20 +121,47 @@ MPU::MPU(){
     compYAngle = MPUData[1];
     gyroXAngle = compXAngle;
     gyroYAngle = compYAngle;
+    xCal = eeprom_read_float(&xCalAddr);
+    yCal = eeprom_read_float(&yCalAddr);
+    compX = FIN_COMP;
+    compY = FIN_COMP;
+    //zCal = eeprom_read_float(&zCalAddr);
+
+    /*eeprom_read_block((void*)&xCal, (const void*)&xCalAddr, 4);
+    eeprom_read_block((void*)&yCal, (const void*)&yCalAddr, 4);
+    eeprom_read_block((void*)&zCal, (const void*)&zCalAddr, 4);*/
 };
 
+void MPU::reset(){
+    IICReadMPU(NO_RAW);
+    compXAngle = MPUData[0];
+    compYAngle = MPUData[1];
+    gyroXAngle = compXAngle;
+    gyroYAngle = compYAngle;
+}
+
+/**
+ * \brief updates the class parameters holding the current X and Y angles
+ * \param[in] dt time between updates in seconds
+ */
 void MPU::updateValues(float dt){
     IICReadMPU(NO_RAW);
     gyroXDt = giveGyroAngle(dt, 'X');
     gyroYDt = giveGyroAngle(dt, 'Y');
-    gyroXAngle += (gyroXDt+GYRO_X_CAL_VAL*dt);
-    gyroYAngle += (gyroYDt+GYRO_Y_CAL_VAL*dt);
+    gyroXAngle += (gyroXDt);
+    gyroYAngle += (gyroYDt);
 
-    compXAngle = (0.99 * (compXAngle + gyroXDt) + 0.01 * ACC_X_ANGLE);   //serves for foward-backward orientation
-    compYAngle = (0.99 * (compYAngle + gyroYDt) + 0.01 * ACC_Y_ANGLE);      //serves for sideways orientation
+    compXAngle = (compX * (compXAngle + gyroXDt) + (1-compX) * ACC_X_ANGLE);   //serves for foward-backward orientation
+    compYAngle = (compY * (compYAngle + gyroYDt) + (1-compY) * ACC_Y_ANGLE);      //serves for sideways orientation
 
 }
 
+/**
+ * \brief private function that calculates the angle change
+ * \param[in] dt time between angle updates
+ * \param[in] c switches between calculation of X-axis angle (X) or Y-axis angle (Y)
+ * \return 0
+ */
 float MPU::giveGyroAngle(float dt, char c){
     if(c=='X'){
         return -(GYRO_X_CHANGE + GYRO_Y_CHANGE*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ GYRO_Z_CHANGE*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
@@ -173,7 +201,10 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
     gyroX = (int16_t)((received[8] << 8) | received[9]);
     gyroY = (int16_t)((received[10] << 8) | received[11]);
     gyroZ = (int16_t)((received[12] << 8) | received[13]);
-
+    /*if(compX < FIN_COMP){
+        compX += 0.0001;
+        compY += 0.0001;
+    }*/
 
     if(returnRaw){
         MPUData[0] = (float)accX;
@@ -185,6 +216,7 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         MPUData[6] = (float)gyroZ;
         return 1;
     }
+
     else{
         float xAngle  = atan(accY / sqrt(accX * accX + accZ * accZ));
         float yAngle = atan2(-accX, accZ);
@@ -197,6 +229,8 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
         MPUData[0] = xAngle;
         MPUData[1] = yAngle;
+        //MPUData[2] = xGyro+xCal;
+        //MPUData[3] = yGyro+yCal;
         MPUData[2] = xGyro;
         MPUData[3] = yGyro;
         MPUData[4] = zGyro;
@@ -213,18 +247,21 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
  * \param[in] samples Number of samples for calibration.
  */
 
-uint8_t calibrate(float *calibratedValues, uint16_t samples = 1000){
-    //BUZZER_ON;
-    float bufferAll[5];
+void MPU::calibrate(uint16_t samples = 1000){
     float bufferSum[5];
     for(uint16_t i=0;i<samples;i++){
-            //IICReadMPU(bufferAll,0);
-            for(uint8_t j=0;j<5;j++)bufferSum[j]+=bufferAll[j];
+            IICReadMPU(NO_RAW);
+            for(uint8_t j=0;j<5;j++){
+                bufferSum[j]+=MPUData[j];
+            }
             _delay_ms(2);
-    }
-    for(uint8_t i=0;i<5;i++)calibratedValues[i] = (float)bufferSum[i]/samples;
-    //BUZZER_OFF;
-    return 0;
+    };
+    xCal  = -bufferSum[2]/(float)samples;
+    yCal = -bufferSum[3]/(float)samples;
+    //zCal = -bufferSum[4]/(float)samples;
+    eeprom_update_float(&xCalAddr, xCal);
+    eeprom_update_float(&yCalAddr, yCal);
+    //eeprom_update_float(&zCalAddr, zCal);
 }
 
 
