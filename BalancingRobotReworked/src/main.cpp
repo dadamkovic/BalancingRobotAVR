@@ -100,9 +100,9 @@ int main(void){
         if(counter%6 == 0){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
-            //if((motors.desiredSpeed <0.05) && (motors.desiredSpeed > -0.05) && controlMovement){
-            //    desiredSpeed = distancePID.giveOutput(motors.totalDist,0,longDt,0);
-            //}
+            if((motors.desiredSpeed <0.05) && (motors.desiredSpeed > -0.05) && controlMovement){
+                desiredSpeed = distancePID.giveOutput(motors.totalDist,0,longDt,0);
+            }
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
             desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-7,7);
             desiredAngle=desiredAngle+ANGLE_OFFSET;
@@ -188,7 +188,6 @@ int main(void){
 
 uint8_t resolveCommand(uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu){
     uint8_t tmp;
-    *controlMovement = 1;
     switch(*command){
         case CONTROL_INFO:
             while(!uart3_available()){}
