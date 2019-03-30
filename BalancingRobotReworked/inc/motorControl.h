@@ -16,7 +16,7 @@ uint8_t setServoAngle(float);
 /**
  * \brief Tuned to acomodate for the differences between controlled motors.
  */
-#define MOTOR_A_SPEED_OFFSET 4
+#define MOTOR_A_SPEED_OFFSET 3
 #define MOTOR_B_SPEED_OFFSET 0
 
 /**
@@ -44,10 +44,11 @@ class MotorControl {
         void setSpeedIndividually(int8_t);
         uint8_t initMotors();
         uint8_t getBatteryLvl();
-        void updateBatteryLvl();
+        uint8_t updateBatteryLvl();
+        float measureCurrent();
 
-        float desiredSpeed = 0;
-        float motorSpeedOffset=0;
+        volatile float desiredSpeed = 0;
+        volatile float motorSpeedOffset=0;
         volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
         volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
         volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges
@@ -67,6 +68,7 @@ class MotorControl {
         uint8_t _Motor_A_PIN_2;                 ///< Pin number of the IN2 input of H-bridge A
         uint8_t _Motor_B_PIN_1;                 ///< Pin number of the IN1 input of H-bridge B
         uint8_t _Motor_B_PIN_2;                 ///< Pin number of the IN2 input of H-bridge B
+        volatile float current_sensor_resistance = 0.5;
 
 
 };

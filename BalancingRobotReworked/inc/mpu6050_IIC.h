@@ -25,6 +25,7 @@
 #define PI 3.14159
 #define GYRO_CONSTANT 131.0
 #define RIGHT_ANGLE_RAD 1.570795
+#define SENSOR_OK 'h'
 
 
 
@@ -34,6 +35,7 @@
 #define GYRO_Y_CHANGE MPUData[3]
 #define GYRO_Z_CHANGE MPUData[4]
 #define FIN_COMP 0.998
+#define INIT_COMP 0.985          //tod check later
 
 extern float EEMEM xCalAddr;
 extern float EEMEM yCalAddr;
@@ -47,15 +49,15 @@ class MPU{
         volatile float gyroXDt, gyroYDt = 0;
         volatile float MPUData[7];
         volatile float compYAngle, compXAngle = 0;
-        volatile float xCal = 0, yCal = 0, zCal = 0;
+        volatile float xCal = 0, yCal = 0;
 
         MPU();
         void updateValues(float);
         void calibrate(uint16_t);
         void reset();
     private:
-        float compX = 0.99;
-        float compY = 0.99;
+        volatile float compX = 0.998;
+        volatile float compY = 0.998;
         uint8_t IICReadMPU(uint8_t);
         float giveGyroAngle(float dt, char c);
 };
@@ -66,5 +68,6 @@ void IICsendStop();
 void IICsendData(uint8_t);
 uint8_t IICreadAck();
 uint8_t IICreadNack();
+uint8_t IICcheckConnection();
 
 #endif /* MPU6050_IIC_H_ */

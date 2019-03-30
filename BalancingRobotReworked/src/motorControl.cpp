@@ -191,26 +191,45 @@ uint8_t MotorControl::AddOffset(uint8_t value, int8_t offset){
  * voltage divider connected to the battery leads. If the value falls under a given threshold
  * a red LED light is turned on to signal to the user the need for battery recharge.
  */
-void MotorControl::updateBatteryLvl(){
+uint8_t MotorControl::updateBatteryLvl(){
     ADMUX |= _BV(REFS0);
     ADMUX &= ~(_BV(REFS1));                                             //5V reference
     ADMUX &= ~(_BV(MUX0)|_BV(MUX1)|_BV(MUX2)|_BV(MUX3)|_BV(MUX4));      //Channel ADC0
     ADCSRA |= _BV(ADEN);                                                //ADC initialized
     ADCSRA |= _BV(ADSC);                                                // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
-    uint16_t ADCval = ADC;
-    currBattLvl = (uint8_t)(currBattLvl * 0.99 + 0.01*map(((ADCval*5.0)/1024.0),3.7,4.08,0,100));
+    volatile uint16_t ADCval = ADC;
+    currBattLvl = (uint8_t)(map((((float)ADCval*4.94)/1024.0),4.75,4.94,0,100));
+    //currBattLvl = (uint8_t)((float)(((ADCval*4.94)/1024.0)-4)*100);
     if(currBattLvl<30){
         ROBOT_BATTERY_ON;
     }
     else {
         ROBOT_BATTERY_OFF;
     }
+    return currBattLvl;
 }
 
+/**
+ * \brief returns current measured battery lvl
+ */
 uint8_t MotorControl::getBatteryLvl(){
     return currBattLvl;
     //return (float) (ADCval);
+}
+
+
+float MotorControl::measureCurrent(){
+    ADMUX |= _BV(REFS0);
+    ADMUX &= ~(_BV(REFS1));             //5V reference
+    ADMUX |= 0b00001111;                //ADC3 - pos, ADC2 - neg, 200 x amplification
+    ADCSRA |= _BV(ADEN);                                                //ADC initialized
+    ADCSRA |= _BV(ADSC);                                                // starts first conversion
+    loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
+    int16_t ADCval = ADC;
+    volatile float voltage_lvl = ((float)ADCval/(512.0*200.0))*4.94;
+    return voltage_lvl/current_sensor_resistance;
+
 }
 
 

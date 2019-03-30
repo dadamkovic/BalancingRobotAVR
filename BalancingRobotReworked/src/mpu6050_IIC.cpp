@@ -23,18 +23,10 @@ uint8_t initIIC(){
     TWBR = 3;              //(F_CPU)/(16+2*TWBR*4^TWPS) = 400kHZ
     TWSR &= ~(_BV(TWPS1)|_BV(TWPS0));   //TWPS = 1
     TWCR |= _BV(TWEN);      //enables IIC
-    uint8_t sensor;
     IICsendStart();
     IICsendData(MPUADDRESS_WRITE);
     IICsendData(0x6B);
     IICsendData(0x01);
-    IICsendStop();
-    IICsendStart();
-    IICsendData(MPUADDRESS_WRITE);
-    IICsendData(0x75);
-    IICsendStart();
-    IICsendData(MPUADDRESS_READ);
-    sensor = IICreadNack();
     IICsendStop();
     IICsendStart();
     IICsendData(MPUADDRESS_WRITE);
@@ -44,7 +36,7 @@ uint8_t initIIC(){
     IICsendData(0x00);
     IICsendData(0x00);
     IICsendStop();
-    if(sensor == 'h'){
+    if(IICcheckConnection()){
         //uart_puts("Spojenie nadviazane \n");
         return 0;
     }
@@ -52,6 +44,18 @@ uint8_t initIIC(){
     return 1;
   }
 
+uint8_t IICcheckConnection(){
+    uint8_t sensor;
+    IICsendStart();
+    IICsendData(MPUADDRESS_WRITE);
+    IICsendData(0x75);
+    IICsendStart();
+    IICsendData(MPUADDRESS_READ);
+    sensor = IICreadNack();
+    IICsendStop();
+    if(sensor == SENSOR_OK)return 1;
+    return 0;
+}
 
 /**
  * \brief Holds the prorgram execution until IIC is done.
@@ -123,9 +127,6 @@ MPU::MPU(){
     gyroYAngle = compYAngle;
     xCal = eeprom_read_float(&xCalAddr);
     yCal = eeprom_read_float(&yCalAddr);
-    compX = FIN_COMP;
-    compY = FIN_COMP;
-    //zCal = eeprom_read_float(&zCalAddr);
 
     /*eeprom_read_block((void*)&xCal, (const void*)&xCalAddr, 4);
     eeprom_read_block((void*)&yCal, (const void*)&yCalAddr, 4);
@@ -150,8 +151,8 @@ void MPU::updateValues(float dt){
     gyroYDt = giveGyroAngle(dt, 'Y');
     gyroXAngle += (gyroXDt);
     gyroYAngle += (gyroYDt);
-    compX = 0.995;
-    compY = 0.995;
+    compX = 0.992;
+    compY = 0.992;
     compXAngle = (compX * (compXAngle + gyroXDt) + (1-compX) * ACC_X_ANGLE);   //serves for foward-backward orientation
     compYAngle = (compY * (compYAngle + gyroYDt) + (1-compY) * ACC_Y_ANGLE);      //serves for sideways orientation
 
@@ -181,6 +182,10 @@ float MPU::giveGyroAngle(float dt, char c){
  */
 
 uint8_t MPU::IICReadMPU(uint8_t returnRaw){
+    while(!IICcheckConnection()){
+        initIIC();
+        uart_puts("Not OK\n");
+    }
     float accX,accY,accZ,tempRaw,gyroX,gyroY,gyroZ;
     IICsendStart();
     IICsendData(MPUADDRESS_WRITE);
@@ -202,10 +207,6 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
     gyroX = (int16_t)((received[8] << 8) | received[9]);
     gyroY = (int16_t)((received[10] << 8) | received[11]);
     gyroZ = (int16_t)((received[12] << 8) | received[13]);
-    /*if(compX < FIN_COMP){
-        compX += 0.0001;
-        compY += 0.0001;
-    }*/
 
     if(returnRaw){
         MPUData[0] = (float)accX;
@@ -230,10 +231,10 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
         MPUData[0] = xAngle;
         MPUData[1] = yAngle;
-        //MPUData[2] = xGyro+xCal;
-        //MPUData[3] = yGyro+yCal;
-        MPUData[2] = xGyro;
-        MPUData[3] = yGyro;
+        MPUData[2] = xGyro+xCal;
+        MPUData[3] = yGyro+yCal;
+        //MPUData[2] = xGyro;
+        //MPUData[3] = yGyro;
         MPUData[4] = zGyro;
         //BUZZER_OFF;
         //uart_puti((uint16_t)((received[0] << 8) | received[1]));
@@ -257,7 +258,7 @@ void MPU::calibrate(uint16_t samples = 1000){
             }
             _delay_ms(2);
     };
-    xCal  = -bufferSum[2]/(float)samples;
+    xCal = -bufferSum[2]/(float)samples;
     yCal = -bufferSum[3]/(float)samples;
     //zCal = -bufferSum[4]/(float)samples;
     eeprom_update_float(&xCalAddr, xCal);
