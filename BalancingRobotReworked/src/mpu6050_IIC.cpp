@@ -233,12 +233,7 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         MPUData[1] = yAngle;
         MPUData[2] = xGyro+xCal;
         MPUData[3] = yGyro+yCal;
-        //MPUData[2] = xGyro;
-        //MPUData[3] = yGyro;
         MPUData[4] = zGyro;
-        //BUZZER_OFF;
-        //uart_puti((uint16_t)((received[0] << 8) | received[1]));
-        //uart_putc('\n');
         }
    return 0;
 }
@@ -260,10 +255,8 @@ void MPU::calibrate(uint16_t samples = 1000){
     };
     xCal = -bufferSum[2]/(float)samples;
     yCal = -bufferSum[3]/(float)samples;
-    //zCal = -bufferSum[4]/(float)samples;
     eeprom_update_float(&xCalAddr, xCal);
     eeprom_update_float(&yCalAddr, yCal);
-    //eeprom_update_float(&zCalAddr, zCal);
 }
 
 

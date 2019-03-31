@@ -51,7 +51,7 @@ class MotorControl {
         volatile float motorSpeedOffset=0;
         volatile float totalDist = 0;           ///< Used to keep track of the total distance traveled
         volatile float speedAB,speedCD = 0;     ///< Used to keep track of the speed of each wheel
-        volatile float encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges
+        volatile int16_t encoderAB,encoderCD = 0; ///< Used to keep track of the total number of detected signal edges
         volatile float oldSpeed = 0;            ///< Necessary to know previous speed to implement filter
         volatile float averageSpeed = 0;        ///< Average speed of both wheels
         uint8_t currBattLvl = 50;

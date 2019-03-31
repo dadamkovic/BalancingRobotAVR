@@ -30,7 +30,7 @@ float EEMEM zCalAddr;
 MotorControl motors(&DDRC,&DDRC,&PORTC,&PORTC,0,2,4,6);       //motors controlled by PB1,PB2,PB3,PB4
 float constrain(float x, float minValue, float maxValue);
 float map(float num2map, float botInit, float topInit, float mapLow, float mapHigh);
-uint8_t resolveCommand(uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu);
+uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu);
 
 
 int main(void){
@@ -39,7 +39,8 @@ int main(void){
     uint16_t counter = 0;
     float motorPower = 0;
     float desiredAngle = 0;
-
+    uint8_t bufferIndex = 0;
+    uint8_t commandBuffer[2] = {0,0};
     uint8_t command = 0x00;
     int8_t toggle_transmission = -1;        //used to stop transmitting when PC closes port
     uint8_t controlMovement = 1;
@@ -87,18 +88,16 @@ int main(void){
     //PID speedAnglePID(0.55,0.05,0.02);                  //0.69,0.03,0.02
     PID speedAnglePID(0.55,0.00,0.1);
     //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-    PID anglePwmPID(16.27,0.0,0.22);
+    PID anglePwmPID(15.27,0.0,0.66);
     //PIC distancePID(15,0,0);
     PID distancePID(15,0,0);
     //PID servoPID(1.3,0,0.1);
-    while(1){
 
+
+    while(1){
         dt = clockTime();
         clockReset();
         mpu6050.updateValues(dt);
-
-        //adcVal = anglePwmPID.tunePID('D',00.3);
-
         if(counter%6 == 0){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
@@ -106,8 +105,7 @@ int main(void){
                 desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,0),-5,5);
             }
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
-            desiredAngle = constrain(desiredAngle+ANGLE_OFFSET,-5,5);
-            desiredAngle=desiredAngle+ANGLE_OFFSET;
+            desiredAngle = constrain(desiredAngle,-5,5);
             longDt = 0;
         }
 
@@ -125,63 +123,77 @@ int main(void){
         else{
             motors.setSpeedIndividually((int8_t)motorPower);
         }
-        //motors.setSpeedIndividually((int8_t)motorPower);
+
         motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset + 0.00001*0);
         motors.desiredSpeed = (0.999999*motors.desiredSpeed + 0.000001*0);
 
-        motors.updateBatteryLvl();
         while(clockTime()<0.01){
             if(uart_available()){
                 if(uart_getc()=='X'){
-                toggle_transmission *= -1;
+                    toggle_transmission *= -1;
                 }
             }
             if(uart3_available()){
                 command = uart3_getc();
-                resolveCommand(&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
+                if(bufferIndex){
+                    commandBuffer[bufferIndex-1] = command;
+                    if(bufferIndex == 2){
+                        resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
+                        bufferIndex = 0;
+                    }
+                    else{
+                        bufferIndex++;
+                    }
+                }
+                if(command == CONTROL_INFO){
+                    bufferIndex = 1;
+                }
+                else{
+                    resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
+                }
             }
 
         }
 
 
-    if((counter == 201) & (DEBUG_OUTPUT == 1)){
-        uart_putf(mpu6050.xCal);
-        uart_putc('\n');
-        uart_putf(dt);
-        uart_putc('\n');
-        //uart_putc('\n');
-        counter=0;
-    }
-    if(((counter % 5) == 0) && DATA_LOGGING && (toggle_transmission>0)){
-        uart_putf(mpu6050.compXAngle);
-        uart_putc(',');
-        uart_putf(mpu6050.gyroXAngle);
-        uart_putc(',');
-        uart_putf(mpu6050.compYAngle);
-        uart_putc(',');
-        uart_putf(mpu6050.gyroYAngle);
-        uart_putc(',');
-        uart_putf(motors.averageSpeed);
-        uart_putc(',');
-        uart_putf(motors.getBatteryLvl());
-        uart_putc(',');
-        uart_putf(motors.totalDist);
-        uart_putc('\n');
-    }
-    while(clockTime()<0.01){}
-    if(clockTime()>0.012){
-        uart_puts("ERROR: ");
-        uart_putf(clockTime());
-        uart_putc('\n');
-    }
+        if((counter == 201) && (DEBUG_OUTPUT == 1)){
+            uart_putf(mpu6050.xCal);
+            uart_putc('\n');
+            uart_putf(dt);
+            uart_putc('\n');
+            //uart_putc('\n');
+            counter=0;
+        }
+        if(((counter % 5) == 0) && DATA_LOGGING && (toggle_transmission>0)){
+            uart_putf(mpu6050.compXAngle);
+            uart_putc(',');
+            uart_putf(mpu6050.gyroXAngle);
+            uart_putc(',');
+            uart_putf(mpu6050.compYAngle);
+            uart_putc(',');
+            uart_putf(mpu6050.gyroYAngle);
+            uart_putc(',');
+            uart_putf(motors.averageSpeed);
+            uart_putc(',');
+            uart_putf(motors.getBatteryLvl());
+            uart_putc(',');
+            uart_putf(motors.totalDist);
+            uart_putc('\n');
+        }
+        while(clockTime()<0.01){}
+        if(clockTime()>0.012){
+            uart_puts("ERROR: ");
+            uart_putf(clockTime());
+            uart_putc('\n');
+        }
+        counter++;
+        if(counter>1000){
+            motors.updateBatteryLvl();
+            counter=0;
+        }
+        longDt+=dt;
 
-    counter++;
-    if(counter>1000)counter=0;
-    longDt+=dt;
-
     }
-
-
     return 0;
 }
 
@@ -194,38 +206,38 @@ int main(void){
  *\return 0
  */
 
-uint8_t resolveCommand(uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu){
+uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu){
     uint8_t tmp;
+    float timer;
     switch(*command){
         case CONTROL_INFO:
-            while(!uart3_available()){
-            }
-            tmp = uart3_getc();
+            timer = clockTime();
             float newSpeed;
-            newSpeed = map(tmp,1,100,-8,8)-0.28;
+            newSpeed = map(movementBuffer[0],1,100,-8,8)-0.28;
             newSpeed = constrain(newSpeed,-5,5);
-            //uart_putf(newSpeed);
-            //uart_putc('\n');
-            while(!uart3_available()){
-            }
-            tmp = uart3_getc();
             float newSteering;
-            newSteering = map(tmp,1,100,-15,15)-0.16;
-            motorsC->desiredSpeed = (0.5*motorsC->desiredSpeed + 0.5*newSpeed);
-            motorsC->motorSpeedOffset = 0.7*motorsC->motorSpeedOffset + 0.3*newSteering;
+            newSteering = map(movementBuffer[1],1,100,-8,8)-0.28;
+            timer = clockTime()-timer;
+            uart_putf(timer);
+            uart_putc('\n');
+            motorsC->desiredSpeed = (0.95*motorsC->desiredSpeed + 0.05*newSpeed);
+
             if((motorsC->desiredSpeed<2) && (motorsC->desiredSpeed>-2) && (motorsC->averageSpeed<2) && (motorsC->averageSpeed>-2)){
-                if(newSteering>2){
+                if(newSteering>4){
                     motorsC->SetDIR(1,'A');
                     motorsC->SetDIR(-1,'B');
-                    OCR1A = 116;
-                    OCR1B = 110;
+                    OCR1A = 196;
+                    OCR1B = 190;
                 }
-                else if(newSteering<-2){
+                else if(newSteering<-4){
                     motorsC->SetDIR(-1,'A');
                     motorsC->SetDIR(1,'B');
-                    OCR1A = 116;
-                    OCR1B = 110;
+                    OCR1A = 196;
+                    OCR1B = 190;
                 }
+            }
+            else {
+                motorsC->motorSpeedOffset = 0.7*motorsC->motorSpeedOffset + 0.3*newSteering;
             }
             *controlMovement = 0;
             motorsC->totalDist = 0;

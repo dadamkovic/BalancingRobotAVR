@@ -94,7 +94,7 @@ ISR(TIMER4_COMPB_vect){
     motors.speedAB = (-motors.encoderAB*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;     //see the comments of the macro definition
     motors.speedCD = (motors.encoderCD*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;
 
-    motors.averageSpeed = (motors.speedAB + motors.speedCD)/2;
+    motors.averageSpeed = (motors.speedAB + motors.speedCD)/2.0;
     motors.averageSpeed = (MOTOR_FILTER_CONSTANT * (motors.oldSpeed) + (1-MOTOR_FILTER_CONSTANT)*motors.averageSpeed);      //complementary filter
     motors.oldSpeed = motors.averageSpeed;
     motors.totalDist += (motors.averageSpeed*WHEEL_RADIUS)*0.05;

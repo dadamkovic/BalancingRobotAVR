@@ -199,8 +199,9 @@ uint8_t MotorControl::updateBatteryLvl(){
     ADCSRA |= _BV(ADSC);                                                // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
     volatile uint16_t ADCval = ADC;
-    currBattLvl = (uint8_t)(map((((float)ADCval*4.94)/1024.0),4.75,4.94,0,100));
-    //currBattLvl = (uint8_t)((float)(((ADCval*4.94)/1024.0)-4)*100);
+    volatile float tmp = (map((((float)ADCval*4.94)/1024.0),4.75,4.94,0,100));
+    tmp = currBattLvl*0.999 + 0.001*tmp;
+    currBattLvl = (uint8_t)tmp;
     if(currBattLvl<30){
         ROBOT_BATTERY_ON;
     }
