@@ -22,5 +22,17 @@ float map(float, float, float, float, float);
 #define ROBOT_LED_ON DDRA |= _BV(7);PORTA |= _BV(7)
 #define ROBOT_BATTERY_ON DDRA |= _BV(5);PORTA |= _BV(5)
 #define ROBOT_BATTERY_OFF DDRA |= _BV(5);PORTA &= ~(_BV(5))
+#include "inttypes.h"
 
+class FILOBuffer{
+    public:
+        FILOBuffer(){};
+        int32_t pop();
+        void add(int32_t);
+        uint8_t filled();
+    private:
+        uint8_t buffer_head = 0;
+        volatile int32_t buffer_items[10];
+        uint8_t buff_filled = 0;
+};
 #endif /* INC_UTILITY_H_ */

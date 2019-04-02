@@ -42,7 +42,7 @@ MotorControl::MotorControl(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, vola
  * H-bridge. The limitation is that for a given motor both pins have to fall under the same control register. The MotorControl class is
  * capable of controlling two motors at the same time as well as keep track of their movements (speed, position, distance traveled ...)
  */
-void MotorControl::initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
+/*void MotorControl::initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
                            uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2){
     _Motor_A_DDR = a_ddr;
     _Motor_B_DDR = b_ddr;
@@ -52,7 +52,7 @@ void MotorControl::initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr
     _Motor_A_PIN_2 = a_pin_2;
     _Motor_B_PIN_1 = b_pin_1;
     _Motor_B_PIN_2 = b_pin_2;
-};
+};*/
 
 
 /**
@@ -133,7 +133,7 @@ uint8_t MotorControl::SetDIR(int8_t dir, char motor){
  */
 void MotorControl::setSpeedIndividually(int8_t motorSpeed){
     int8_t motorSpeedA = motorSpeed + (int8_t)motorSpeedOffset;
-    int8_t motorSpeedB = motorSpeed -(int8_t)motorSpeedOffset;
+    int8_t motorSpeedB = motorSpeed - (int8_t) motorSpeedOffset;
     if(motorSpeedA>0){
          SetDIR(1,'A');
          motorSpeedA += MOTOR_A_SPEED_OFFSET;
@@ -200,7 +200,7 @@ uint8_t MotorControl::updateBatteryLvl(){
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
     volatile uint16_t ADCval = ADC;
     volatile float tmp = (map((((float)ADCval*4.94)/1024.0),4.75,4.94,0,100));
-    tmp = currBattLvl*0.999 + 0.001*tmp;
+    tmp = (float)currBattLvl*0.999 + 0.001*tmp;
     currBattLvl = (uint8_t)tmp;
     if(currBattLvl<30){
         ROBOT_BATTERY_ON;

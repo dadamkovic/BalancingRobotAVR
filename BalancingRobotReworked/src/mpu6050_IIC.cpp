@@ -149,10 +149,13 @@ void MPU::updateValues(float dt){
     IICReadMPU(NO_RAW);
     gyroXDt = giveGyroAngle(dt, 'X');
     gyroYDt = giveGyroAngle(dt, 'Y');
+    /*gyroXDt = -GYRO_X_CHANGE * dt;
+    gyroYDt = -GYRO_Y_CHANGE * dt;*/
     gyroXAngle += (gyroXDt);
     gyroYAngle += (gyroYDt);
-    compX = 0.992;
-    compY = 0.992;
+    //compX = 0.992;
+    compX = 0.998;
+    compY = 0.998;
     compXAngle = (compX * (compXAngle + gyroXDt) + (1-compX) * ACC_X_ANGLE);   //serves for foward-backward orientation
     compYAngle = (compY * (compYAngle + gyroYDt) + (1-compY) * ACC_Y_ANGLE);      //serves for sideways orientation
 

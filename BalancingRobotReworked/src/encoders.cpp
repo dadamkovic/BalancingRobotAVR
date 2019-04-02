@@ -9,9 +9,13 @@
 #include <avr/io.h>
 #include "timeTracking.h"
 #include "motorControl.h"
+#include "uart.h"
+#include "utility.h"
 
 extern MotorControl motors;
 
+FILOBuffer bufferA;
+FILOBuffer bufferB;
 /**
  * \brief Used to calculate by how big angle have the wheels turned in 50ms
  *
@@ -20,6 +24,7 @@ extern MotorControl motors;
  *  2*PI/374 == 0,0168 radians per edge.
  */
 #define ANGLE_PER_TICK 0.0168
+
 
 /**
  * \brief Timer4 interrupt set up to occur every 50 ms.
@@ -38,8 +43,8 @@ extern MotorControl motors;
  *
  * \note It is not recommended to use vales close to the extremes as the filter then becomes useless.
  */
-#define MOTOR_FILTER_CONSTANT 0.85
-
+#define MOTOR_FILTER_CONSTANT 0.6
+//#define MOTOR_FILTER_CONSTANT 0.25
 /*GPIO - initialization routines for interrupt handling
  * pins used are ==> (PE4, PA0), (PE5,PA2)
  */
@@ -87,20 +92,26 @@ ISR(INT5_vect){
  * \brief Refreshes the data about current speed and driven distance.
  */
 ISR(TIMER4_COMPB_vect){
-    /*motors.speedAB = -(motors.encoderAB*0.0168)/0.05;       //374 tickov na 2pi ==> 2pi/374 = 0.0168
-    motors.speedCD = (motors.encoderCD*0.0168)/0.05;      //casova konstanta pre meranie je dt = 0.05s
-    */
 
-    motors.speedAB = (-motors.encoderAB*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;     //see the comments of the macro definition
-    motors.speedCD = (motors.encoderCD*ANGLE_PER_TICK)/MOTOR_SAMPLE_TIME;
+    /*if((motors.encoderAB-buffer.bufferPop())>3){
+        buffer.bufferAdd(motors.encoderAB-3);
+    }
+    else if((motors.encoderAB-buffer.bufferPop())<-3){
+        buffer.bufferAdd(motors.encoderAB+3);;
+    }*/
+    bufferA.add(motors.encoderAB);
+    bufferB.add(motors.encoderCD);
+    if(bufferA.filled() && bufferB.filled()){
+        motors.speedAB = (-(motors.encoderAB-bufferA.pop())*ANGLE_PER_TICK)/(MOTOR_SAMPLE_TIME*10);     //see the comments of the macro definition
+        motors.speedCD = ((motors.encoderCD-bufferB.pop())*ANGLE_PER_TICK)/(MOTOR_SAMPLE_TIME*10);
 
-    motors.averageSpeed = (motors.speedAB + motors.speedCD)/2.0;
-    motors.averageSpeed = (MOTOR_FILTER_CONSTANT * (motors.oldSpeed) + (1-MOTOR_FILTER_CONSTANT)*motors.averageSpeed);      //complementary filter
-    motors.oldSpeed = motors.averageSpeed;
-    motors.totalDist += (motors.averageSpeed*WHEEL_RADIUS)*0.05;
-
-    motors.encoderAB = 0;
-    motors.encoderCD = 0;
+        motors.averageSpeed = (motors.speedAB + motors.speedCD)/2.0;
+        //motors.averageSpeed = (MOTOR_FILTER_CONSTANT * (motors.oldSpeed) + (1-MOTOR_FILTER_CONSTANT)*motors.averageSpeed);      //complementary filter
+        //if(motors.averageSpeed > -0.1 && motors.averageSpeed < 0.1)motors.averageSpeed = 0.0;
+        //if(motorsAverageSpeed)
+        motors.oldSpeed = motors.averageSpeed;
+        motors.totalDist += (motors.averageSpeed*WHEEL_RADIUS)*MOTOR_SAMPLE_TIME;
+    }
     TCNT4 = 0;                  //timer has to be reset
 }
 

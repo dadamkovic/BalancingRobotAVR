@@ -80,41 +80,43 @@ int main(void){
 
     dt = clockTime();   //gets initial dt
 
-    setServoAngle(mpu6050.compYAngle*RAD_TO_DEG+SERVO_OFFSET);
+    setServoAngle(SERVO_OFFSET);
     clockReset();
     _delay_ms(10);
 
-
     //PID speedAnglePID(0.55,0.05,0.02);                  //0.69,0.03,0.02
-    PID speedAnglePID(0.55,0.00,0.1);
+    PID speedAnglePID(0.55,0.3,0.00);
+    //PID speedAnglePID(0,0.00,0);
     //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-    PID anglePwmPID(15.27,0.0,0.66);
+    PID anglePwmPID(15.0,0.0,0.66);
     //PIC distancePID(15,0,0);
-    PID distancePID(15,0,0);
-    //PID servoPID(1.3,0,0.1);
-
-
+    PID distancePID(10,10,0);
+    PID servoPID(0,4.5,0);
+    //float oldServo = mpu6050.compYAngle*RAD_TO_DEG;
     while(1){
         dt = clockTime();
         clockReset();
         mpu6050.updateValues(dt);
-        if(counter%6 == 0){
+        if(longDt > 0.05){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
             if((motors.desiredSpeed <0.5) && (motors.desiredSpeed > -0.5) && controlMovement){
-                desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,0),-5,5);
+                desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,1),-6,6);
             }
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
             desiredAngle = constrain(desiredAngle,-5,5);
+            /*float servoAngle = servoPID.giveOutput(mpu6050.compYAngle*RAD_TO_DEG,0,longDt,150);
+
+            servoAngle = constrain(servoAngle,-50,50);
+            oldServo = 0.8*oldServo + 0.2*servoAngle;
+            setServoAngle(oldServo+SERVO_OFFSET);*/
             longDt = 0;
         }
 
         motorPower= anglePwmPID.giveOutput(mpu6050.compXAngle*RAD_TO_DEG,desiredAngle,dt,0);        //calling PID to give us value for motors
         motorPower = constrain(motorPower,-90,90);  //constraining PID output
 
-        //float servoAngle = servoPID.giveOutput(mpu6050.compYAngle*RAD_TO_DEG+SERVO_OFFSET,0,dt,0);
-        //servoAngle = constrain(servoAngle,-50,50);
-        //setServoAngle(servoAngle);
+
 
         //setServoAngle(SERVO_OFFSET);
         if(((mpu6050.compXAngle*RAD_TO_DEG)>20) || ((mpu6050.compXAngle*RAD_TO_DEG)<-20)){
@@ -123,11 +125,10 @@ int main(void){
         else{
             motors.setSpeedIndividually((int8_t)motorPower);
         }
-
         motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset + 0.00001*0);
         motors.desiredSpeed = (0.999999*motors.desiredSpeed + 0.000001*0);
 
-        while(clockTime()<0.01){
+        while(clockTime()<0.004){
             if(uart_available()){
                 if(uart_getc()=='X'){
                     toggle_transmission *= -1;
@@ -138,6 +139,7 @@ int main(void){
                 if(bufferIndex){
                     commandBuffer[bufferIndex-1] = command;
                     if(bufferIndex == 2){
+                        command = CONTROL_INFO;
                         resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
                         bufferIndex = 0;
                     }
@@ -148,7 +150,7 @@ int main(void){
                 if(command == CONTROL_INFO){
                     bufferIndex = 1;
                 }
-                else{
+                else if(command != CONTROL_INFO && bufferIndex == 0){
                     resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
                 }
             }
@@ -180,17 +182,16 @@ int main(void){
             uart_putf(motors.totalDist);
             uart_putc('\n');
         }
-        while(clockTime()<0.01){}
-        if(clockTime()>0.012){
+        if(clockTime()>0.005){
             uart_puts("ERROR: ");
             uart_putf(clockTime());
             uart_putc('\n');
         }
         counter++;
         if(counter>1000){
-            motors.updateBatteryLvl();
             counter=0;
         }
+        motors.updateBatteryLvl();
         longDt+=dt;
 
     }
@@ -208,21 +209,16 @@ int main(void){
 
 uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu){
     uint8_t tmp;
-    float timer;
     switch(*command){
         case CONTROL_INFO:
-            timer = clockTime();
             float newSpeed;
+            //newSpeed = map(movementBuffer[0],1,100,-8,8)-0.28;
             newSpeed = map(movementBuffer[0],1,100,-8,8)-0.28;
             newSpeed = constrain(newSpeed,-5,5);
             float newSteering;
             newSteering = map(movementBuffer[1],1,100,-8,8)-0.28;
-            timer = clockTime()-timer;
-            uart_putf(timer);
-            uart_putc('\n');
-            motorsC->desiredSpeed = (0.95*motorsC->desiredSpeed + 0.05*newSpeed);
 
-            if((motorsC->desiredSpeed<2) && (motorsC->desiredSpeed>-2) && (motorsC->averageSpeed<2) && (motorsC->averageSpeed>-2)){
+            /*if((motorsC->averageSpeed<2) && (motorsC->averageSpeed>-2)){
                 if(newSteering>4){
                     motorsC->SetDIR(1,'A');
                     motorsC->SetDIR(-1,'B');
@@ -235,10 +231,11 @@ uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *contro
                     OCR1A = 196;
                     OCR1B = 190;
                 }
-            }
-            else {
+            }*/
+            //else {
+                motorsC->desiredSpeed = (0.7*motorsC->desiredSpeed + 0.3*newSpeed);
                 motorsC->motorSpeedOffset = 0.7*motorsC->motorSpeedOffset + 0.3*newSteering;
-            }
+            //}
             *controlMovement = 0;
             motorsC->totalDist = 0;
             break;

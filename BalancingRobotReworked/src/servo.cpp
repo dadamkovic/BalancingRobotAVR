@@ -19,7 +19,7 @@ void initServo(){
     TCCR3B |= (_BV(WGM32)|_BV(WGM33));                 //Fast PWM mode TOP at ICR3
     DDRE |= _BV(PE3);
 
-    OCR3A = 3000;                                       //servo midpoint
+    //OCR3A = 3000;                                       //servo midpoint
     //ICR3 = 39999;                                       //frequency 50Hz
     ICR3 = 30000;
     TCCR3A |= _BV(COM3A1);                              //OCR3 clear on compare, set on BOT
