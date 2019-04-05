@@ -112,11 +112,11 @@ Date        Description
 
 /** Size of the circular receive buffer, must be power of 2 */
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE 32
+#define UART_RX_BUFFER_SIZE 64
 #endif
 /** Size of the circular transmit buffer, must be power of 2 */
 #ifndef UART_TX_BUFFER_SIZE
-#define UART_TX_BUFFER_SIZE 32
+#define UART_TX_BUFFER_SIZE 64
 #endif
 
 /* test if the size of the circular buffers fits into SRAM */
@@ -296,6 +296,8 @@ extern void uart1_flush(void);
 extern void uart2_flush(void);
 /** @brief   Flush bytes waiting in receive buffer */
 extern void uart3_flush(void);
+
+void uart3_putf(float);
 
 /**@}*/
 

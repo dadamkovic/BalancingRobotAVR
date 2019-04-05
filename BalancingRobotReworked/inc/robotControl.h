@@ -19,7 +19,10 @@
 #define REQ_TILT_ANGLE 0x03
 #define REQ_MPU_CALIBRATION 0x04
 #define REQ_SPEED 0x06
+
 #define TOGGLE_HOLD 0x07
+#define REQ_DISTANCE 0x08
+#define REQ_CURRENT 0x09
 
 /**
 #define H_REGISTER1 &DDRC

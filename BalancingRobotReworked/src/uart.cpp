@@ -1253,7 +1253,11 @@ int uart3_available(void)
         return (UART_RX_BUFFER_MASK + UART3_RxHead - UART3_RxTail) % UART_RX_BUFFER_MASK;
 }/* uart3_available */
 
-
+void uart3_putf(float number){
+    char buffer[20];
+    dtostrf(number,2,2,buffer);
+    uart_puts(buffer);
+}
 
 /*************************************************************************
 Function: uart3_flush()

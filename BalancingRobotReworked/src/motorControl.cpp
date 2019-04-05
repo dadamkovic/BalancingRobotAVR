@@ -9,8 +9,8 @@
 
 #include "motorControl.h"
 #include "utility.h"
-
-
+#include <util/delay.h>
+#include "uart.h"
 
 /**
  * \brief Constructor of the MotorControl class
@@ -198,10 +198,14 @@ uint8_t MotorControl::updateBatteryLvl(){
     ADCSRA |= _BV(ADEN);                                                //ADC initialized
     ADCSRA |= _BV(ADSC);                                                // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
-    volatile uint16_t ADCval = ADC;
-    volatile float tmp = (map((((float)ADCval*4.94)/1024.0),4.75,4.94,0,100));
-    tmp = (float)currBattLvl*0.999 + 0.001*tmp;
+    uint16_t result;
+    result = ADCL;
+    result |= ADCH<<8;
+    //3.77
+    volatile float tmp = (map((((float)result*3.77)/1024.0),3.5,3.77,0,100));
+    tmp = (float)currBattLvl*0.9 + 0.1*tmp;
     currBattLvl = (uint8_t)tmp;
+
     if(currBattLvl<30){
         ROBOT_BATTERY_ON;
     }
@@ -223,16 +227,27 @@ uint8_t MotorControl::getBatteryLvl(){
 float MotorControl::measureCurrent(){
     ADMUX |= _BV(REFS0);
     ADMUX &= ~(_BV(REFS1));             //5V reference
-    ADMUX |= 0b00001111;                //ADC3 - pos, ADC2 - neg, 200 x amplification
+    ADMUX |= _BV(MUX0);                //ADC3 - pos, ADC2 - neg, 200 x amplification
+    ADMUX &= ~(_BV(MUX2)|_BV(MUX3)|_BV(MUX4)|_BV(MUX1));
     ADCSRA |= _BV(ADEN);                                                //ADC initialized
     ADCSRA |= _BV(ADSC);                                                // starts first conversion
     loop_until_bit_is_clear(ADCSRA,ADSC);                               //bit clear when read is complete
-    int16_t ADCval = ADC;
-    volatile float voltage_lvl = ((float)ADCval/(512.0*200.0))*4.94;
-    return voltage_lvl/current_sensor_resistance;
+    uint16_t result;
+    result = ADCL;
+    result |= ADCH<<8;
+    volatile float voltage_lvl = ((float)result*4.37)/(1024.0);
+    current = voltage_lvl/current_sensor_resistance;
+    return current;
 
 }
 
+/**
+ * \brief returns current measured battery lvl
+ */
+float MotorControl::getCurrent(){
+    return current;
+    //return (float) (ADCval);
+}
 
 
 

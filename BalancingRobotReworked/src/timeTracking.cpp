@@ -58,8 +58,8 @@ void clockShutdown(){
 void encoderClockInit(){
     TCCR4A &= ~(_BV(WGM40)|_BV(WGM41));
     TCCR4B &= ~(_BV(WGM42));                //normal mode
-    OCR4B = 12500;                          //interrupt should happen every 50ms ==> OCR4B = (INETRRUPT_PERIOD/TIMER_PERIOD)*TIMER_SIZE
-    //OCR4B = 25000;
+    //OCR4B = 12500;                          //interrupt should happen every 50ms ==> OCR4B = (INETRRUPT_PERIOD/TIMER_PERIOD)*TIMER_SIZE
+    OCR4B = 6250;
     TIMSK4 |= _BV(OCIE4B);                  //enable compare interrupt on OCR4B
 }
 

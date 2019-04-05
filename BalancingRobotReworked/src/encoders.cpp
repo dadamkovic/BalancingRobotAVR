@@ -14,8 +14,8 @@
 
 extern MotorControl motors;
 
-FILOBuffer bufferA;
-FILOBuffer bufferB;
+FIFOBuffer bufferA;
+FIFOBuffer bufferB;
 /**
  * \brief Used to calculate by how big angle have the wheels turned in 50ms
  *
@@ -29,7 +29,7 @@ FILOBuffer bufferB;
 /**
  * \brief Timer4 interrupt set up to occur every 50 ms.
  */
-#define MOTOR_SAMPLE_TIME 0.05
+#define MOTOR_SAMPLE_TIME 0.025
 
 /**
  * \brief Radius of the robot wheel.

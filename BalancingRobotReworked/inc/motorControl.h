@@ -46,6 +46,7 @@ class MotorControl {
         uint8_t getBatteryLvl();
         uint8_t updateBatteryLvl();
         float measureCurrent();
+        float getCurrent();
 
         volatile float desiredSpeed = 0;
         volatile float motorSpeedOffset=0;
@@ -55,6 +56,7 @@ class MotorControl {
         volatile float oldSpeed = 0;            ///< Necessary to know previous speed to implement filter
         volatile float averageSpeed = 0;        ///< Average speed of both wheels
         volatile float desiredDistance = 0;
+        volatile float current=0.0;
         uint8_t currBattLvl = 50;
         uint8_t commandDecay = 1;
         uint8_t SetDIR(int8_t, char);
@@ -69,7 +71,7 @@ class MotorControl {
         uint8_t _Motor_A_PIN_2;                 ///< Pin number of the IN2 input of H-bridge A
         uint8_t _Motor_B_PIN_1;                 ///< Pin number of the IN1 input of H-bridge B
         uint8_t _Motor_B_PIN_2;                 ///< Pin number of the IN2 input of H-bridge B
-        volatile float current_sensor_resistance = 0.5;
+        volatile float current_sensor_resistance = 0.3;
 
 
 };

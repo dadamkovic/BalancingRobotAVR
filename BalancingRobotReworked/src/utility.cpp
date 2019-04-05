@@ -22,7 +22,7 @@ float map(float num2map, float botInit, float topInit, float mapLow, float mapHi
 
 
 
-void FILOBuffer::add(int32_t item){
+void FIFOBuffer::add(int32_t item){
     if(buffer_head<10){
         buffer_items[buffer_head++] = item;
     }
@@ -32,7 +32,7 @@ void FILOBuffer::add(int32_t item){
         buffer_items[buffer_head++] = item;
     }
 };
-int32_t FILOBuffer::pop(){
+int32_t FIFOBuffer::pop(){
     if(buff_filled){
         if(buffer_head<10){
             return buffer_items[buffer_head];
@@ -44,6 +44,6 @@ int32_t FILOBuffer::pop(){
     return buffer_items[0];
 };
 
-uint8_t FILOBuffer::filled(){
+uint8_t FIFOBuffer::filled(){
     return buff_filled;
 };

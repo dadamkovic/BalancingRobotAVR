@@ -85,10 +85,10 @@ int main(void){
     _delay_ms(10);
 
     //PID speedAnglePID(0.55,0.05,0.02);                  //0.69,0.03,0.02
-    PID speedAnglePID(0.55,0.3,0.00);
+    PID speedAnglePID(0.55,0.3,0.03);
     //PID speedAnglePID(0,0.00,0);
     //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-    PID anglePwmPID(15.0,0.0,0.66);
+    PID anglePwmPID(16.0,0.0,0.56);
     //PIC distancePID(15,0,0);
     PID distancePID(10,10,0);
     PID servoPID(0,4.5,0);
@@ -101,7 +101,7 @@ int main(void){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
             if((motors.desiredSpeed <0.5) && (motors.desiredSpeed > -0.5) && controlMovement){
-                desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,1),-6,6);
+                desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,1),-8,8);
             }
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
             desiredAngle = constrain(desiredAngle,-5,5);
@@ -119,14 +119,14 @@ int main(void){
 
 
         //setServoAngle(SERVO_OFFSET);
-        if(((mpu6050.compXAngle*RAD_TO_DEG)>20) || ((mpu6050.compXAngle*RAD_TO_DEG)<-20)){
+        if(((mpu6050.compXAngle*RAD_TO_DEG)>30) || ((mpu6050.compXAngle*RAD_TO_DEG)<-30)){
             motors.setSpeedIndividually(0);
         }
         else{
             motors.setSpeedIndividually((int8_t)motorPower);
         }
-        motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset + 0.00001*0);
-        motors.desiredSpeed = (0.999999*motors.desiredSpeed + 0.000001*0);
+        motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset);
+        motors.desiredSpeed = (0.999999*motors.desiredSpeed);
 
         while(clockTime()<0.004){
             if(uart_available()){
@@ -150,10 +150,12 @@ int main(void){
                 if(command == CONTROL_INFO){
                     bufferIndex = 1;
                 }
-                else if(command != CONTROL_INFO && bufferIndex == 0){
+                else if((command != CONTROL_INFO) && (bufferIndex == 0)&&(command != 0x00)){
                     resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
                 }
             }
+
+
 
         }
 
@@ -188,10 +190,11 @@ int main(void){
             uart_putc('\n');
         }
         counter++;
-        if(counter>1000){
-            counter=0;
+        if(counter == 100){
+            motors.updateBatteryLvl();
+            counter = 0;
         }
-        motors.updateBatteryLvl();
+
         longDt+=dt;
 
     }
@@ -208,7 +211,7 @@ int main(void){
  */
 
 uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu){
-    uint8_t tmp;
+    unsigned char tmp;
     switch(*command){
         case CONTROL_INFO:
             float newSpeed;
@@ -233,8 +236,8 @@ uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *contro
                 }
             }*/
             //else {
-                motorsC->desiredSpeed = (0.7*motorsC->desiredSpeed + 0.3*newSpeed);
-                motorsC->motorSpeedOffset = 0.7*motorsC->motorSpeedOffset + 0.3*newSteering;
+                motorsC->desiredSpeed = (0.8*motorsC->desiredSpeed + 0.2*newSpeed);
+                motorsC->motorSpeedOffset = 0.9*motorsC->motorSpeedOffset + 0.1*newSteering;
             //}
             *controlMovement = 0;
             motorsC->totalDist = 0;
@@ -250,12 +253,33 @@ uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *contro
             tmp = (angle&LSB);
             uart3_putc(tmp);
             break;
+
         case REQ_SPEED:
             int16_t speed;
             speed = (int16_t) (motorsC->averageSpeed*100.0);
             tmp = speed>>8;
             uart3_putc(tmp);
             tmp = (speed&LSB);
+            uart3_putc(tmp);
+            uart_puti(speed);
+            break;
+        case REQ_DISTANCE:
+            int16_t distance;
+            distance = (int16_t) (motorsC->totalDist*100.0);
+            tmp = distance>>8;
+            uart3_putc(tmp);
+            tmp = (distance&LSB);
+            uart3_putc(tmp);
+            uart_puti(distance);
+            break;
+        case REQ_CURRENT:
+            int16_t current;
+            volatile float current_f;
+            current_f = motorsC->getCurrent();
+            current = (int16_t) (current_f*100.0);
+            tmp = current>>8;
+            uart3_putc(tmp);
+            tmp = (current&LSB);
             uart3_putc(tmp);
             break;
 
