@@ -125,8 +125,8 @@ MPU::MPU(){
     compYAngle = MPUData[1];
     gyroXAngle = compXAngle;
     gyroYAngle = compYAngle;
-    xCal = eeprom_read_float(&xCalAddr);
-    yCal = eeprom_read_float(&yCalAddr);
+    //xCal = eeprom_read_float(&xCalAddr);
+    //yCal = eeprom_read_float(&yCalAddr);
 
     /*eeprom_read_block((void*)&xCal, (const void*)&xCalAddr, 4);
     eeprom_read_block((void*)&yCal, (const void*)&yCalAddr, 4);
@@ -234,8 +234,14 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
         float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
         MPUData[0] = xAngle;
         MPUData[1] = yAngle;
-        MPUData[2] = xGyro+xCal;
-        MPUData[3] = yGyro+yCal;
+        if(calibrationInProgress){
+            MPUData[2] = xGyro;
+            MPUData[3] = yGyro;
+        }
+        else{
+            MPUData[2] = xGyro+xCal;
+            MPUData[3] = yGyro+yCal;
+        }
         MPUData[4] = zGyro;
         }
    return 0;

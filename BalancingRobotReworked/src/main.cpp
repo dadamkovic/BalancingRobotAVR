@@ -184,17 +184,26 @@ int main(void){
             uart_putf(motors.totalDist);
             uart_putc('\n');
         }
-        if(clockTime()>0.005){
+        if(clockTime()>0.006){
             uart_puts("ERROR: ");
             uart_putf(clockTime());
             uart_putc('\n');
         }
         counter++;
-        if(counter == 100){
+        if((counter % 100 )== 0){
             motors.updateBatteryLvl();
-            counter = 0;
-        }
+            /*int16_t angle;
+            unsigned char tmp;
+            angle = (int16_t)(mpu6050.compXAngle*100.0);
+            tmp = (angle>>8);
+            uart3_putc(tmp);
+            tmp = (angle&LSB);
+            uart3_putc(tmp);*/
+            //uart3_putf((float)counter);
+            //uart3_putc('\0');
 
+        }
+        if(counter>1000)counter = 0;
         longDt+=dt;
 
     }
@@ -246,45 +255,21 @@ uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *contro
             uart3_putc(motorsC->getBatteryLvl());
             break;
         case REQ_TILT_ANGLE:
-            int16_t angle;
-            angle = (int16_t)(mpu->compXAngle*100.0);
-            tmp = (angle>>8);
-            uart3_putc(tmp);
-            tmp = (angle&LSB);
-            uart3_putc(tmp);
+            uart3_putf(mpu->compXAngle);
             break;
 
         case REQ_SPEED:
-            int16_t speed;
-            speed = (int16_t) (motorsC->averageSpeed*100.0);
-            tmp = speed>>8;
-            uart3_putc(tmp);
-            tmp = (speed&LSB);
-            uart3_putc(tmp);
-            uart_puti(speed);
+            uart3_putf(motorsC->averageSpeed);
             break;
         case REQ_DISTANCE:
-            int16_t distance;
-            distance = (int16_t) (motorsC->totalDist*100.0);
-            tmp = distance>>8;
-            uart3_putc(tmp);
-            tmp = (distance&LSB);
-            uart3_putc(tmp);
-            uart_puti(distance);
+            uart3_putf(motorsC->totalDist);
             break;
         case REQ_CURRENT:
-            int16_t current;
-            volatile float current_f;
-            current_f = motorsC->getCurrent();
-            current = (int16_t) (current_f*100.0);
-            tmp = current>>8;
-            uart3_putc(tmp);
-            tmp = (current&LSB);
-            uart3_putc(tmp);
+            uart3_putf(motorsC->getCurrent());
             break;
 
         case REQ_MPU_CALIBRATION:
-            mpu->calibrate(1000);
+            mpu->calibrate(5000);
             uart3_putc('\n');
             _delay_ms(500);
             BUZZER_ON;

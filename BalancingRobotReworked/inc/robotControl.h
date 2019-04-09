@@ -23,6 +23,7 @@
 #define TOGGLE_HOLD 0x07
 #define REQ_DISTANCE 0x08
 #define REQ_CURRENT 0x09
+#define DATA_TRANSFER 0xf0
 
 /**
 #define H_REGISTER1 &DDRC

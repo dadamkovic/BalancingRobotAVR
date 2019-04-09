@@ -50,7 +50,7 @@ class MPU{
         volatile float MPUData[7];
         volatile float compYAngle, compXAngle = 0;
         volatile float xCal = 0, yCal = 0;
-
+        uint8_t calibrationInProgress = 0;
         MPU();
         void updateValues(float);
         void calibrate(uint16_t);

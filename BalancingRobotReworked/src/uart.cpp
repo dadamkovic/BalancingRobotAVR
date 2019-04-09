@@ -1255,8 +1255,9 @@ int uart3_available(void)
 
 void uart3_putf(float number){
     char buffer[20];
-    dtostrf(number,2,2,buffer);
-    uart_puts(buffer);
+    dtostrf(number,4,4,buffer);
+    uart3_puts(buffer);
+    uart3_putc('\0');
 }
 
 /*************************************************************************
