@@ -1,0 +1,8 @@
+WARNING: Using incubator modules: jdk.incubator.httpclient
+log4j:WARN No appenders could be found for logger (org.eclipse.jgit.util.FS).
+log4j:WARN Please initialize the log4j system properly.
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.lucene.store.MMapDirectory (file:/home/daniel/installed/eclipse/cpp-photon2/eclipse/../../../../.p2/pool/plugins/org.apache.lucene.core_6.1.0.v20170814-1820.jar) to method java.nio.DirectByteBuffer.cleaner()
+WARNING: Please consider reporting this to the maintainers of org.apache.lucene.store.MMapDirectory
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release

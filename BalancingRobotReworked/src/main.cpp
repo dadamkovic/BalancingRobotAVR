@@ -80,19 +80,20 @@ int main(void){
 
     dt = clockTime();   //gets initial dt
 
-    setServoAngle(SERVO_OFFSET);
+    //setServoAngle(SERVO_OFFSET);
     clockReset();
     _delay_ms(10);
 
     //PID speedAnglePID(0.55,0.05,0.02);                  //0.69,0.03,0.02
     PID speedAnglePID(0.55,0.3,0.03);
     //PID speedAnglePID(0,0.00,0);
-    //PID anglePwmPID(15.27,0.0,0.66);                        //38,0.24
-    PID anglePwmPID(16.0,0.0,0.56);
+    //PID anglePwmPID(16,0.0,0.66);                        //38,0.24
+    PID anglePwmPID(14.0,0.0,0.56);
     //PIC distancePID(15,0,0);
     PID distancePID(10,10,0);
+    //PID servoPID(0,4.5,0);
     PID servoPID(0,4.5,0);
-    //float oldServo = mpu6050.compYAngle*RAD_TO_DEG;
+    float oldServo = mpu6050.compYAngle*RAD_TO_DEG;
     while(1){
         dt = clockTime();
         clockReset();
@@ -100,16 +101,16 @@ int main(void){
         if(longDt > 0.05){
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
-            if((motors.desiredSpeed <0.5) && (motors.desiredSpeed > -0.5) && controlMovement){
-                desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,1),-8,8);
+            if(controlMovement){
+                desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,1),-5,5);
             }
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
-            desiredAngle = constrain(desiredAngle,-5,5);
-            /*float servoAngle = servoPID.giveOutput(mpu6050.compYAngle*RAD_TO_DEG,0,longDt,150);
+            desiredAngle = constrain(desiredAngle,-9,9);
+            float servoAngle = servoPID.giveOutput(mpu6050.compYAngle*RAD_TO_DEG,0,longDt,150);
 
             servoAngle = constrain(servoAngle,-50,50);
             oldServo = 0.8*oldServo + 0.2*servoAngle;
-            setServoAngle(oldServo+SERVO_OFFSET);*/
+            setServoAngle(oldServo+SERVO_OFFSET);
             longDt = 0;
         }
 
@@ -125,10 +126,10 @@ int main(void){
         else{
             motors.setSpeedIndividually((int8_t)motorPower);
         }
-        motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset);
-        motors.desiredSpeed = (0.999999*motors.desiredSpeed);
+        //motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset);
+        //motors.desiredSpeed = (0.999999*motors.desiredSpeed);
 
-        while(clockTime()<0.004){
+        while(clockTime()<0.005){
             if(uart_available()){
                 if(uart_getc()=='X'){
                     toggle_transmission *= -1;
