@@ -15,48 +15,44 @@
 #include "robotControl.h"
 #include "utility.h"
 
-#define ANGLE_OFFSET 0
+
 #define DEBUG_OUTPUT 0             //set to 0 to disable debugging info
 #define DATA_LOGGING 0
-#define SERVO_OFFSET -8
-#define UART_BAUD_RATE 57600
-#define LSB 0x00ff
-#define MSB 0xff00
 
-float EEMEM xCalAddr;
+
+float EEMEM xCalAddr;       ///Pointers to memory holding calibration values
 float EEMEM yCalAddr;
 float EEMEM zCalAddr;
 
-MotorControl motors(&DDRC,&DDRC,&PORTC,&PORTC,0,2,4,6);       //motors controlled by PB1,PB2,PB3,PB4
-float constrain(float x, float minValue, float maxValue);
-float map(float num2map, float botInit, float topInit, float mapLow, float mapHigh);
 uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu);
 
+MotorControl motors(&DDRC,&DDRC,&PORTC,&PORTC,0,2,4,6);       //motors controlled by PB1,PB2,PB3,PB4
 
 int main(void){
-    ROBOT_LED_ON;
+    ROBOT_LED_ON;           //turns on status LED (green)
     float dt,longDt = 0;
     uint16_t counter = 0;
     float motorPower = 0;
     float desiredAngle = 0;
     uint8_t bufferIndex = 0;
-    uint8_t commandBuffer[2] = {0,0};
-    uint8_t command = 0x00;
-    int8_t toggle_transmission = -1;        //used to stop transmitting when PC closes port
-    uint8_t controlMovement = 1;
-    motors.initMotors();                                    //initiates motors
+    uint8_t commandBuffer[2] = {0,0};       //buffers received commands from controller
+    uint8_t command = 0x00;                 //default command
+    int8_t toggleTransmission = -1;        //used to stop transmitting when PC closes port
+    uint8_t trackPosition = 1;            //when set to 0 robot doesn't track position
+
+
+    /*All  necessary initializations*/
+    sei();
+    motors.initMotors();
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE,F_CPU) );
     uart3_init(UART_BAUD_SELECT(57600, F_CPU));
-    sei();
-    encodersInit();
-    BUZZER_INIT;
-    //BUZZER_ON;
-    //_delay_ms(1000);
-    //BUZZER_OFF;
-    if(initIIC()==1){
-        BUZZER_ON;
-    }
+    initEncoders();
     initServo();
+    clockInit();
+    while(initIIC()!=0);        //
+
+    BUZZER_INIT;
+    BUZZER_ON;
 
 
 /*
@@ -66,21 +62,14 @@ int main(void){
  *
  * ------------>speedAnglePID----->anglePwmPID
  */
-    //PID anglePID(13.14,0.14,0.0354);                //initiates PID for anlge 13.14,0.14,0.0354
-    //PID servoPID(2,0,0);                        //pid for servos 0,1.5,0.1
-
-                                                       //18.5,0,0.2
 
 
-                                                    //need to use interrupts to read data from UART
-
-    clockInit();                                    //initializes time tracking
     clockStart();
     MPU mpu6050;
 
     dt = clockTime();   //gets initial dt
 
-    //setServoAngle(SERVO_OFFSET);
+    setServoAngle(SERVO_OFFSET);
     clockReset();
     _delay_ms(10);
 
@@ -92,56 +81,57 @@ int main(void){
     //PIC distancePID(15,0,0);
     PID distancePID(10,10,0);
     //PID servoPID(0,4.5,0);
-    PID servoPID(0,4.5,0);
-    float oldServo = mpu6050.compYAngle*RAD_TO_DEG;
+    PID servoPID(10,0,0);
+    //float oldServo = mpu6050.compYAngle*RAD_TO_DEG;
+    BUZZER_OFF;
     while(1){
         dt = clockTime();
         clockReset();
         mpu6050.updateValues(dt);
-        if(longDt > 0.05){
+        if(longDt > 0.05){                                      //every 50ms recompute PID output
             float currSpeed = motors.averageSpeed;
             float desiredSpeed = motors.desiredSpeed;
-            if(controlMovement){
+            if(trackPosition){
                 desiredSpeed = constrain(distancePID.giveOutput(motors.totalDist,0,longDt,1),-5,5);
             }
             desiredAngle = speedAnglePID.giveOutput(currSpeed,desiredSpeed,longDt,10);
             desiredAngle = constrain(desiredAngle,-9,9);
-            float servoAngle = servoPID.giveOutput(mpu6050.compYAngle*RAD_TO_DEG,0,longDt,150);
-
+            /*float servoAngle = servoPID.giveOutput(mpu6050.compYAngle*RAD_TO_DEG,0,longDt,150);
             servoAngle = constrain(servoAngle,-50,50);
             oldServo = 0.8*oldServo + 0.2*servoAngle;
-            setServoAngle(oldServo+SERVO_OFFSET);
+            setServoAngle(oldServo+SERVO_OFFSET);*/
             longDt = 0;
         }
 
         motorPower= anglePwmPID.giveOutput(mpu6050.compXAngle*RAD_TO_DEG,desiredAngle,dt,0);        //calling PID to give us value for motors
-        motorPower = constrain(motorPower,-90,90);  //constraining PID output
-
-
+        motorPower = constrain(motorPower,-90,90);                                                  //constraining PID output
 
         //setServoAngle(SERVO_OFFSET);
-        if(((mpu6050.compXAngle*RAD_TO_DEG)>30) || ((mpu6050.compXAngle*RAD_TO_DEG)<-30)){
+
+        if(((mpu6050.compXAngle*RAD_TO_DEG)>30) || ((mpu6050.compXAngle*RAD_TO_DEG)<-30)){          //checks if it hasn't fallen
             motors.setSpeedIndividually(0);
         }
         else{
             motors.setSpeedIndividually((int8_t)motorPower);
         }
-        //motors.motorSpeedOffset = (0.99999*motors.motorSpeedOffset);
-        //motors.desiredSpeed = (0.999999*motors.desiredSpeed);
+
+        motors.motorSpeedOffset = (0.9999*motors.motorSpeedOffset);         //check if these fit later!!!!!!!!!!!!!!!
+        motors.desiredSpeed = (0.9999*motors.desiredSpeed);
 
         while(clockTime()<0.005){
             if(uart_available()){
                 if(uart_getc()=='X'){
-                    toggle_transmission *= -1;
+                    toggleTransmission *= -1;
                 }
             }
             if(uart3_available()){
                 command = uart3_getc();
+                /*code bellow continues filling the command buffer if movement command is expected*/
                 if(bufferIndex){
                     commandBuffer[bufferIndex-1] = command;
                     if(bufferIndex == 2){
                         command = CONTROL_INFO;
-                        resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
+                        resolveCommand(commandBuffer,&command, &trackPosition, &speedAnglePID, &motors, &mpu6050);
                         bufferIndex = 0;
                     }
                     else{
@@ -152,24 +142,20 @@ int main(void){
                     bufferIndex = 1;
                 }
                 else if((command != CONTROL_INFO) && (bufferIndex == 0)&&(command != 0x00)){
-                    resolveCommand(commandBuffer,&command, &controlMovement, &speedAnglePID, &motors, &mpu6050);
+                    resolveCommand(commandBuffer,&command, &trackPosition, &speedAnglePID, &motors, &mpu6050);
                 }
             }
-
-
-
         }
 
-
-        if((counter == 201) && (DEBUG_OUTPUT == 1)){
+        if((counter == 201) && (DEBUG_OUTPUT == 1)){                            //used for printing debug stuff
             uart_putf(mpu6050.xCal);
             uart_putc('\n');
             uart_putf(dt);
             uart_putc('\n');
-            //uart_putc('\n');
             counter=0;
         }
-        if(((counter % 5) == 0) && DATA_LOGGING && (toggle_transmission>0)){
+
+        if(((counter % 5) == 0) && DATA_LOGGING && (toggleTransmission>0)){     //used for getting graph data
             uart_putf(mpu6050.compXAngle);
             uart_putc(',');
             uart_putf(mpu6050.gyroXAngle);
@@ -189,86 +175,78 @@ int main(void){
             uart_puts("ERROR: ");
             uart_putf(clockTime());
             uart_putc('\n');
+            dt = 0.005;
         }
         counter++;
         if((counter % 100 )== 0){
             motors.updateBatteryLvl();
-            /*int16_t angle;
-            unsigned char tmp;
-            angle = (int16_t)(mpu6050.compXAngle*100.0);
-            tmp = (angle>>8);
-            uart3_putc(tmp);
-            tmp = (angle&LSB);
-            uart3_putc(tmp);*/
-            //uart3_putf((float)counter);
-            //uart3_putc('\0');
-
         }
         if(counter>1000)counter = 0;
         longDt+=dt;
-
     }
     return 0;
 }
 
 /**
  *\brief Accepts commands from controller and resolves them
- *\param[in] command Pointer to the command received
+ *\
+ *\This function is essentially a finite-state machine with the data received from controller to be taken as a state.
+ *\The function handles robot movement decoding, communication with the controller, calibration and distance tracking toggling.
+ *\
+ *\param[in] movementBuffer pointer to the data in the buffer
+ *\param[in] command pointer to the command received
+ *\param[in] controlMovement pointer that allows us to turn off or on distance tracking
  *\param[in] pid pointer to the pid class instance used in main
- *\param[in] motorsC pointer to the motor class instance used in main
+ *\param[in] motorsHandle pointer to the motor class instance used in main
  *\param[in] mpu pointer to the mpu6050 class instance used in main
  *\return 0
  */
 
-uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsC, MPU *mpu){
-    unsigned char tmp;
+uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *controlMovement, PID *pid, MotorControl *motorsHandle, MPU *mpu){
     switch(*command){
         case CONTROL_INFO:
             float newSpeed;
-            //newSpeed = map(movementBuffer[0],1,100,-8,8)-0.28;
-            newSpeed = map(movementBuffer[0],1,100,-8,8)-0.28;
-            newSpeed = constrain(newSpeed,-5,5);
+            newSpeed = map(movementBuffer[0],1,100,-5,5)-0.18;
+            //newSpeed = constrain(newSpeed,-5,5);
             float newSteering;
-            newSteering = map(movementBuffer[1],1,100,-8,8)-0.28;
+            newSteering = map(movementBuffer[1],1,100,-7,7)-0.2;
 
-            /*if((motorsC->averageSpeed<2) && (motorsC->averageSpeed>-2)){
-                if(newSteering>4){
+            /*if((motorsC->averageSpeed<2) && (motorsC->averageSpeed>-2)&&((newSteering>4)||(newSteering<-4))){
+                if(newSteering<-4){
                     motorsC->SetDIR(1,'A');
                     motorsC->SetDIR(-1,'B');
                     OCR1A = 196;
                     OCR1B = 190;
+
                 }
-                else if(newSteering<-4){
+                else if(newSteering>4){
                     motorsC->SetDIR(-1,'A');
                     motorsC->SetDIR(1,'B');
                     OCR1A = 196;
                     OCR1B = 190;
                 }
             }*/
-            //else {
-                motorsC->desiredSpeed = (0.8*motorsC->desiredSpeed + 0.2*newSpeed);
-                motorsC->motorSpeedOffset = 0.9*motorsC->motorSpeedOffset + 0.1*newSteering;
-            //}
+            motorsHandle->desiredSpeed = (0.75*motorsHandle->desiredSpeed + 0.25*newSpeed);
+            motorsHandle->motorSpeedOffset = 0.9*motorsHandle->motorSpeedOffset + 0.1*newSteering;
+
             *controlMovement = 0;
-            motorsC->totalDist = 0;
+            motorsHandle->totalDist = 0;
             break;
         case REQ_BATTERY_LVL:
-            uart3_putc(motorsC->getBatteryLvl());
+            uart3_putc(motorsHandle->getBatteryLvl());
             break;
         case REQ_TILT_ANGLE:
             uart3_putf(mpu->compXAngle);
             break;
-
         case REQ_SPEED:
-            uart3_putf(motorsC->averageSpeed);
+            uart3_putf(motorsHandle->averageSpeed);
             break;
         case REQ_DISTANCE:
-            uart3_putf(motorsC->totalDist);
+            uart3_putf(motorsHandle->totalDist);
             break;
         case REQ_CURRENT:
-            uart3_putf(motorsC->getCurrent());
+            uart3_putf(motorsHandle->getCurrent());
             break;
-
         case REQ_MPU_CALIBRATION:
             mpu->calibrate(5000);
             uart3_putc('\n');
@@ -277,7 +255,8 @@ uint8_t resolveCommand(uint8_t *movementBuffer,uint8_t *command, uint8_t *contro
             _delay_ms(500);
             BUZZER_OFF;
             _delay_ms(3000);
-            mpu->reset();
+            motorsHandle->totalDist = 0;
+            mpu->compXAngle = 0;
             break;
         case TOGGLE_HOLD:
             if(*controlMovement)*controlMovement = 0;

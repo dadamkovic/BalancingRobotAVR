@@ -21,29 +21,32 @@ float map(float num2map, float botInit, float topInit, float mapLow, float mapHi
 }
 
 
-
+/**
+ * \brief Adds item to position head, increments head or wraps it around
+ */
 void FIFOBuffer::add(int32_t item){
-    if(buffer_head<10){
-        buffer_items[buffer_head++] = item;
+    if(bufferHead<10){
+        bufferItems[bufferHead++] = item;
     }
     else{
-        buff_filled = 1;
-        buffer_head = 0;
-        buffer_items[buffer_head++] = item;
+        buffFilled = 1;
+        bufferHead = 0;
+        bufferItems[bufferHead++] = item;
     }
 };
+
+/**
+ * \brief Returns item from position head (oldest item)
+ */
 int32_t FIFOBuffer::pop(){
-    if(buff_filled){
-        if(buffer_head<10){
-            return buffer_items[buffer_head];
-        }
-        else{
-            return buffer_items[0];
+    if(buffFilled){
+        if(bufferHead<10){
+            return bufferItems[bufferHead];
         }
     }
-    return buffer_items[0];
+    return bufferItems[0];
 };
 
 uint8_t FIFOBuffer::filled(){
-    return buff_filled;
+    return buffFilled;
 };

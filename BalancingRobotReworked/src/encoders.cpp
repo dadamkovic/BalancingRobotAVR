@@ -59,7 +59,7 @@ FIFOBuffer bufferB;
  * Initialization functions are then called to start the timer, which afterwards controls the
  * interval in which the data from encoders is processed.
  */
-void encodersInit(){
+void initEncoders(){
     DDRA &= ~(_BV(PA0) | _BV(PE5));             //pins as inputs
     DDRE &= ~(_BV(PE4)| _BV(PA2));
 
@@ -73,7 +73,7 @@ void encodersInit(){
 };
 
 /**
- * \see encodersInit
+ * \see initEncoders
  */
 ISR(INT4_vect){
     if( PINA & _BV(PA2))motors.encoderAB--;
@@ -92,23 +92,15 @@ ISR(INT5_vect){
  * \brief Refreshes the data about current speed and driven distance.
  */
 ISR(TIMER4_COMPB_vect){
-
-    /*if((motors.encoderAB-buffer.bufferPop())>3){
-        buffer.bufferAdd(motors.encoderAB-3);
-    }
-    else if((motors.encoderAB-buffer.bufferPop())<-3){
-        buffer.bufferAdd(motors.encoderAB+3);;
-    }*/
     bufferA.add(motors.encoderAB);
     bufferB.add(motors.encoderCD);
     if(bufferA.filled() && bufferB.filled()){
-        motors.speedAB = (-(motors.encoderAB-bufferA.pop())*ANGLE_PER_TICK)/(MOTOR_SAMPLE_TIME*10);     //see the comments of the macro definition
+        volatile float tmp =-(motors.encoderAB-bufferA.pop());
+        if(tmp>3)tmp-=3;
+        if(tmp<-3)tmp+=3;
+        motors.speedAB = (tmp*ANGLE_PER_TICK)/(MOTOR_SAMPLE_TIME*10);     //see the comments of the macro definition
         motors.speedCD = ((motors.encoderCD-bufferB.pop())*ANGLE_PER_TICK)/(MOTOR_SAMPLE_TIME*10);
-
         motors.averageSpeed = (motors.speedAB + motors.speedCD)/2.0;
-        //motors.averageSpeed = (MOTOR_FILTER_CONSTANT * (motors.oldSpeed) + (1-MOTOR_FILTER_CONSTANT)*motors.averageSpeed);      //complementary filter
-        //if(motors.averageSpeed > -0.1 && motors.averageSpeed < 0.1)motors.averageSpeed = 0.0;
-        //if(motorsAverageSpeed)
         motors.oldSpeed = motors.averageSpeed;
         motors.totalDist += (motors.averageSpeed*WHEEL_RADIUS)*MOTOR_SAMPLE_TIME;
     }

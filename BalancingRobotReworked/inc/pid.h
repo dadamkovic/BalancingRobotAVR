@@ -16,8 +16,7 @@ extern float constrain(float, float, float);
  */
 class PID{
     public:
-        PID(float proportional, float integrate, float derivative):
-        P(proportional), I(integrate),D(derivative){};
+        PID(float, float, float);
         ~PID(){};
 
         float P = 1;

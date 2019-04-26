@@ -8,9 +8,7 @@
 
 
 #include "motorControl.h"
-#include "utility.h"
-#include <util/delay.h>
-#include "uart.h"
+
 
 /**
  * \brief Constructor of the MotorControl class
@@ -37,56 +35,35 @@ MotorControl::MotorControl(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, vola
           _Motor_B_PIN_1(b_pin_1), _Motor_B_PIN_2(b_pin_2) {}
 
 /**
- * \brief class constructor for the MotorControl class
- * The DDR for connections to the H-bridge are loaded as well as PORT and pin values. The data is later used to send correct signals to the
- * H-bridge. The limitation is that for a given motor both pins have to fall under the same control register. The MotorControl class is
- * capable of controlling two motors at the same time as well as keep track of their movements (speed, position, distance traveled ...)
- */
-/*void MotorControl::initInterface(volatile uint8_t* a_ddr,volatile uint8_t* b_ddr, volatile uint8_t* a_port,volatile uint8_t* b_port, uint8_t a_pin_1, \
-                           uint8_t a_pin_2, uint8_t b_pin_1, uint8_t b_pin_2){
-    _Motor_A_DDR = a_ddr;
-    _Motor_B_DDR = b_ddr;
-    _Motor_A_PORT = a_port;
-    _Motor_B_PORT = b_port;
-    _Motor_A_PIN_1 = a_pin_1;
-    _Motor_A_PIN_2 = a_pin_2;
-    _Motor_B_PIN_1 = b_pin_1;
-    _Motor_B_PIN_2 = b_pin_2;
-};*/
-
-
-/**
  * \brief Initializes motors, only called <b> once </b> in a program run.
  * \return 0
  *
  * The method initializes Timer 1 into non-inverting fast PWM mode and sets the corresponding
  * pins to be outputs changing based on Timer 1 control registers setup.
  */
-uint8_t MotorControl::initMotors(){
+void MotorControl::initMotors(){
 
     DDRB |= (_BV(PB6) | _BV(PB5)) ;             // PD6, PD5 is output
     OCR1A = 0;                                  //motors initialized to 0V - shutdown
     OCR1B = 0;
 
     TCCR1A |= _BV(COM1A1);
-    TCCR1A &= ~_BV(COM1A0);                 // set none-inverting mode channel A
+    TCCR1A &= ~_BV(COM1A0);                     // set none-inverting mode channel A
     TCCR1A |= _BV(COM1B1);
-    TCCR1A &= ~_BV(COM1B0);                 // set none-inverting mode channel B
+    TCCR1A &= ~_BV(COM1B0);                     // set none-inverting mode channel B
 
     TCCR1A |= _BV(WGM10);
     TCCR1B |= _BV(WGM12);
-    TCCR1A &= ~(_BV(WGM11));                // set fast PWM Mode - 8 bit mode
+    TCCR1A &= ~(_BV(WGM11));                    // set fast PWM Mode - 8 bit mode
 
     TCCR1B |= _BV(CS11);
-    TCCR1B &= ~(_BV(CS10)|_BV(CS12));      //prescaler 8
+    TCCR1B &= ~(_BV(CS10)|_BV(CS12));           //prescaler 8
 
 
     *_Motor_A_DDR |= (_BV(_Motor_A_PIN_1)|(_BV(_Motor_A_PIN_2)));
     *_Motor_B_DDR |= (_BV(_Motor_B_PIN_1)|(_BV(_Motor_B_PIN_2)));
     SetDIR(1,'A');                              //both motors forward
     SetDIR(1,'B');
-
-    return 0;
 }
 
 /**
@@ -123,8 +100,7 @@ uint8_t MotorControl::SetDIR(int8_t dir, char motor){
         *motor_port |= (1 << ctrlx0);
         *motor_port &= ~(1<< ctrlx1);
     }
-
-   return 0;
+    return 0;
 }
 
 /**
@@ -220,10 +196,9 @@ uint8_t MotorControl::updateBatteryLvl(){
  */
 uint8_t MotorControl::getBatteryLvl(){
     return currBattLvl;
-    //return (float) (ADCval);
 }
 
-
+/*
 float MotorControl::measureCurrent(){
     ADMUX |= _BV(REFS0);
     ADMUX &= ~(_BV(REFS1));             //5V reference
@@ -236,10 +211,10 @@ float MotorControl::measureCurrent(){
     result = ADCL;
     result |= ADCH<<8;
     volatile float voltage_lvl = ((float)result*4.37)/(1024.0);
-    current = voltage_lvl/current_sensor_resistance;
+    current = voltage_lvl/currentSensorResistance;
     return current;
-
 }
+*/
 
 /**
  * \brief returns current measured battery lvl

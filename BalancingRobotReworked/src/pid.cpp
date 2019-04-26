@@ -12,6 +12,10 @@
 #define MAX_ADC_VAL 1024.0        //might be lower if input voltage <2.56
 
 
+PID::PID(float proportional, float integrate, float derivative):
+    P(proportional), I(integrate),D(derivative){};
+
+
 /**
  * \brief Calculates the output of PID, given input parameters.
  * \param[in] input Value that corresponds to the level of current measurement of some state. E.g.: Current angle.
@@ -73,8 +77,6 @@ void PID::changeD(float newD){
  *
  * This function takes care of initializing ADC converter, used for sampling the voltage set with potentiometer.
  * the read value is scaled based on the maximal allowed value for a given parameter, which is then set accordingly.
- *
- * \todo Make the maximal possible levels of parameter defined values
  */
 float PID::tunePID(char select, float maxParamValue){
     uint16_t ADCval;

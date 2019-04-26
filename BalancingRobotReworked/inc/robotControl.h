@@ -25,16 +25,7 @@
 #define REQ_CURRENT 0x09
 #define DATA_TRANSFER 0xf0
 
-/**
-#define H_REGISTER1 &DDRC
-#define H_REGISTER2 &DDRC
-#define H_PORT1 &PORTC
-#define H_PORT2 &PORTC
-#define H_PIN1 0
-#define H_PIN2 2
-#define H_PIN3 4
-#define H_PIN4 6
-*/
+
 
 
 

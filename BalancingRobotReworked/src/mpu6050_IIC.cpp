@@ -119,10 +119,11 @@ uint8_t IICreadNack(){
 
 MPU::MPU(){
     initIIC();
-    _delay_ms(1000);
-    IICReadMPU(NO_RAW);
-    compXAngle = MPUData[0];
-    compYAngle = MPUData[1];
+    //_delay_ms(1000);
+    _delay_ms(200);
+    IICReadMPU();
+    compXAngle = xAccAngle;
+    compYAngle = yAccAngle;
     gyroXAngle = compXAngle;
     gyroYAngle = compYAngle;
     //xCal = eeprom_read_float(&xCalAddr);
@@ -134,9 +135,9 @@ MPU::MPU(){
 };
 
 void MPU::reset(){
-    IICReadMPU(NO_RAW);
-    compXAngle = MPUData[0];
-    compYAngle = MPUData[1];
+    IICReadMPU();
+    compXAngle = xAccAngle;
+    compYAngle = yAccAngle;
     gyroXAngle = compXAngle;
     gyroYAngle = compYAngle;
 }
@@ -146,18 +147,17 @@ void MPU::reset(){
  * \param[in] dt time between updates in seconds
  */
 void MPU::updateValues(float dt){
-    IICReadMPU(NO_RAW);
+    IICReadMPU();
     gyroXDt = giveGyroAngle(dt, 'X');
     gyroYDt = giveGyroAngle(dt, 'Y');
-    /*gyroXDt = -GYRO_X_CHANGE * dt;
-    gyroYDt = -GYRO_Y_CHANGE * dt;*/
     gyroXAngle += (gyroXDt);
     gyroYAngle += (gyroYDt);
-    //compX = 0.992;
-    compX = 0.998;
-    compY = 0.998;
-    compXAngle = (compX * (compXAngle + gyroXDt) + (1-compX) * ACC_X_ANGLE);   //serves for foward-backward orientation
-    compYAngle = (compY * (compYAngle + gyroYDt) + (1-compY) * ACC_Y_ANGLE);      //serves for sideways orientation
+    if(compX < FIN_COMP){
+        compX += COMP_ADDITION;
+        compY += COMP_ADDITION;
+    }
+    compXAngle = (compX * (compXAngle + gyroXDt) + (1-compX) * xAccAngle);   //serves for foward-backward orientation
+    compYAngle = (compY * (compYAngle + gyroYDt) + (1-compY) * yAccAngle);      //serves for sideways orientation
 
 }
 
@@ -169,9 +169,9 @@ void MPU::updateValues(float dt){
  */
 float MPU::giveGyroAngle(float dt, char c){
     if(c=='X'){
-        return -(GYRO_X_CHANGE + GYRO_Y_CHANGE*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ GYRO_Z_CHANGE*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
+        return -(xGyAngle + yGyAngle*((sin(compXAngle)*sin(compYAngle))/cos(compYAngle))+ zGyAngle*((cos(compXAngle)*sin(compYAngle))/(cos(compYAngle))))*dt;
     }
-    else if(c=='Y')return -((GYRO_Y_CHANGE*cos(compXAngle)) - GYRO_Z_CHANGE*sin(compXAngle))*dt;
+    else if(c=='Y')return -((yGyAngle*cos(compXAngle)) - zGyAngle*sin(compXAngle))*dt;
     return 0;
 }
 /**
@@ -184,7 +184,7 @@ float MPU::giveGyroAngle(float dt, char c){
  * or performs computations and sets yaw, pitch from accelerometer and angle accelerations from gyroscope.
  */
 
-uint8_t MPU::IICReadMPU(uint8_t returnRaw){
+uint8_t MPU::IICReadMPU(){
     while(!IICcheckConnection()){
         initIIC();
         uart_puts("Not OK\n");
@@ -211,61 +211,52 @@ uint8_t MPU::IICReadMPU(uint8_t returnRaw){
     gyroY = (int16_t)((received[10] << 8) | received[11]);
     gyroZ = (int16_t)((received[12] << 8) | received[13]);
 
-    if(returnRaw){
-        MPUData[0] = (float)accX;
-        MPUData[1] = (float)accY;
-        MPUData[2] = (float)accZ;
-        MPUData[3] = (float)tempRaw;
-        MPUData[4] = (float)gyroX;
-        MPUData[5] = (float)gyroY;
-        MPUData[6] = (float)gyroZ;
-        return 1;
-    }
 
+    float yaw  = atan(accY / sqrt(accX * accX + accZ * accZ));
+    float pitch = atan2(-accX, accZ);
+
+    //MPU6050 is mounted upside down so this needs to correct the angle
+    if(pitch>RIGHT_ANGLE_RAD)pitch = PI - pitch;
+    if(pitch<-RIGHT_ANGLE_RAD)pitch = -PI - pitch;
+
+    // ConvertS to deg/s
+    float xGyro = (gyroX / GYRO_CONSTANT) * DEG_TO_RAD;
+    float yGyro = (gyroY / GYRO_CONSTANT) * DEG_TO_RAD;
+    float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
+    xAccAngle = yaw;
+    yAccAngle = pitch;
+    if(calibrationInProgress){
+        xGyAngle = xGyro;
+        yGyAngle = yGyro;
+    }
     else{
-        float xAngle  = atan(accY / sqrt(accX * accX + accZ * accZ));
-        float yAngle = atan2(-accX, accZ);
-        if(yAngle>RIGHT_ANGLE_RAD)yAngle = PI - yAngle;    //MPU6050 is mounted upside down so this needs to correct the angle
-        if(yAngle<-RIGHT_ANGLE_RAD)yAngle = -PI - yAngle;
-        //BUZZER_ON;
-        // ConvertS to deg/s
-        float xGyro = (gyroX / GYRO_CONSTANT) * DEG_TO_RAD;
-        float yGyro = (gyroY / GYRO_CONSTANT) * DEG_TO_RAD;
-        float zGyro = (gyroZ / GYRO_CONSTANT) * DEG_TO_RAD;
-        MPUData[0] = xAngle;
-        MPUData[1] = yAngle;
-        if(calibrationInProgress){
-            MPUData[2] = xGyro;
-            MPUData[3] = yGyro;
-        }
-        else{
-            MPUData[2] = xGyro+xCal;
-            MPUData[3] = yGyro+yCal;
-        }
-        MPUData[4] = zGyro;
-        }
+        xGyAngle = xGyro+xCal;
+        yGyAngle = yGyro+yCal;
+    }
+    zGyAngle = zGyro;
+
    return 0;
 }
 
 /**
- * \brief Starts calibration routine, robot layed on the back.
+ * \brief Starts calibration routine, robot on the back.
  * \param[out] calibratedValues Buffer that will store values for calibration, min 5 float variables.
  * \param[in] samples Number of samples for calibration.
  */
 
 void MPU::calibrate(uint16_t samples = 1000){
     float bufferSum[5];
+    float xCalSum, yCalSum = 0;
     for(uint16_t i=0;i<samples;i++){
-            IICReadMPU(NO_RAW);
-            for(uint8_t j=0;j<5;j++){
-                bufferSum[j]+=MPUData[j];
-            }
+            IICReadMPU();
+            xCalSum += xGyAngle;
+            yCalSum += yGyAngle;
             _delay_ms(2);
     };
-    xCal = -bufferSum[2]/(float)samples;
-    yCal = -bufferSum[3]/(float)samples;
-    eeprom_update_float(&xCalAddr, xCal);
-    eeprom_update_float(&yCalAddr, yCal);
+    xCal = -xCalSum/(float)samples;
+    yCal = -yCalSum/(float)samples;
+    //eeprom_update_float(&xCalAddr, xCal);
+    //eeprom_update_float(&yCalAddr, yCal);
 }
 
 
